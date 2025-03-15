@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>El Pollo Loco</title>
+    <link rel="icon" href="img/9_intro_outro_screens/start/startscreen_1.png">
+    <link rel="icon" href="data:,">
+
+
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="startscreen.css">
+    <link rel="stylesheet" href="settings.css">
+    <link rel="stylesheet" href="exit.css">
+    <link rel="stylesheet" href="winscreen.css">
+    <link rel="stylesheet" href="gameover.style.css">
+    <link id="mediaquerries-style" rel="stylesheet" href="mediaquerries/mediaquerries.css">
+    <link id="landscape-style" rel="stylesheet" href="mediaquerries/landscape.css">
+    <link rel="stylesheet" href="styles/tutorial.css">
+
+    <script src="js/sound-manager.js" defer></script>
+    <script type="module" src="js/gamestate.js" defer></script>
+
+    <script src="models/drawable-object.class.js" defer></script>
+    <script src="models/movable-object.class.js" defer></script>
+    <script src="models/background-object.class.js" defer></script>
+    <script src="models/keyboard.class.js" defer></script>
+
+    <script src="models/cloud.class.js" defer></script>
+    <script src="models/character.class.js" defer></script>
+    <script src="models/chicken.class.js" defer></script>
+    <script src="models/smallchicken.class.js" defer></script>
+    <script src="models/endboss.class.js" defer></script>
+    <script src="models/coins.class.js" defer></script>
+    <script src="models/salsa-bottles.class.js" defer></script>
+    <script src="models/salsa-bottle-statusbar.class.js" defer></script>
+    <script src="models/endboss-statusbar.class.js" defer></script>
+    <script src="models/splash-animation.class.js" defer></script>
+    <script src="models/throwable-object.class.js" defer></script>
+    <script src="models/status-bar.class.js" defer></script>
+    <script src="models/coin-status.class.js" defer></script>
+    <script src="models/level.class.js" defer></script>
+    <script src="models/world.class.js" defer></script>
+    <script src="levels/level1.js" defer></script>
+    <script type="module" src="js/game.js" defer></script>
+    <script src="js/screen.js" defer></script>
+    <script src="js/restart-game.js" defer></script>
+    <script src="js/gameover.js" defer></script>
+    <script src="js/win.js" defer></script>
+
+
+
+</head>
+
+<body onload="init()">
+    <div id="content-wrapper">
+        <div id="enter_screen">
+            <h2>Start Your Adventure Click or Press Enter</h2>
+
+        </div>
+
+        <div id="start_screen">
+            <div class="icon-container">
+                <img id="settings-icon" src="icons/settingicon-transformed.webp" alt="SettingIcon">
+                <img id="play-icon" src="icons/playicon-transformed.webp" alt="PlayIcon">
+                <img id="exit-icon" src="icons/exiticon-transformed.webp" alt="ExitIcon">
+
+
+
+            </div>
+
+        </div>
+        <div id="loading_screen" style="display: none;">
+            <p>Loading... Please wait</p>
+            <img id="loading-image" src="img/6_salsa_bottle/salsa_bottle.png" alt="Loading Image">
+        </div>
+
+        <div id="setting-menu-container">
+            <div id="settings-menu" style="display: none;">
+                <h2>Volume</h2>
+                <label for="volume-slider">Music-Sound:</label>
+                <input id="volume-slider" type="range" min="0" max="100" value="50" />
+                <label for="volume-slider">Effect-Sound:</label>
+                <input type="range" id="effects-volume-slider" min="0" max="100" value="50">
+                <h2>Imprint</h2>
+                <button id="imprint-bttn" onclick="showImprint()">Show Imprint</button>
+                <button id="close-settings">Close Settings</button>
+            </div>
+        </div>
+
+        <div id="exit-menu-container">
+            <div id="exit-menu" style="display: none;">
+                <h2>Quit!</h2>
+                <p>Do you want to quit and go back to the desktop?</p>
+                <button id="exit-confirm">Yes?</button>
+                <button id="exit-cancel">No?</button>
+            </div>
+        </div>
+
+
+
+        <div id="overlaycontainer-instructions">
+            <div id="game-instructions" class="instructions-container">
+                <h2>How to Play</h2>
+                <p>Our character, Pepe, has the following mission: He must defeat the final boss. To reach him, he must
+                    fight an
+                    army of chickens.</p>
+                <p><strong>Important:</strong></p>
+
+                <p>All chickens must be defeated by jumping on them.</p>
+                <p>Salsa bottles must be collected, as they are the only way to defeat the final boss.</p>
+
+                <div class="controls-container">
+                    <h2>Keybinds</h2>
+
+                    <div class="keyboard">
+                        <div class="key">←</div>
+                        <div class="key">→</div>
+                    </div>
+                    <p class="description">Walk Left / Walk Right</p>
+
+                    <div class="keyboard">
+                        <div class="key space">Space</div>
+                    </div>
+                    <p class="description">Jump</p>
+
+                    <div class="keyboard">
+                        <div class="key">F</div>
+                    </div>
+                    <p class="description">Throw Object</p>
+                </div>
+
+                <button id="htp-bttn" onclick="closeInstructions()">Got it!</button>
+            </div>
+        </div>
+        <div class="overlay" id="imprintoverlay">
+            <div class="overlay-content">
+                <h2>Imprint</h2>
+                <p><strong>Name-</strong> Adrian Preis</p>
+                <p><strong>Address:</strong> Germany, Rhineland-Palatinate</p>
+                <p><strong>Contact:</strong> Email: adriantest@deinspiel.de</p>
+                <p><strong>Responsible for content:</strong> Adrian Preis</p>
+                <p><strong>VAT ID:</strong> Not available</p>
+                <p><strong>Commercial Register:</strong> Not registered</p>
+                <p><strong>Legal notice:</strong>
+                    The contents of this application have been created with the greatest care. However, no guarantee can
+                    be
+                    given
+                    for the accuracy, completeness, and timeliness of the content. Any liability for damages that arise
+                    directly or
+                    indirectly from the use of this website is excluded.
+                </p>
+                <p><strong>Copyright:</strong>
+                    The content and works created by the operator in this application are subject to German copyright
+                    law.
+                    Any duplication, processing, distribution, and any kind of use outside the limits of copyright law
+                    require the written consent of the respective author or creator.
+                </p>
+                <p><strong>Online Dispute Resolution:</strong>
+                    The European Commission provides a platform for online dispute resolution (OS):
+                    <a href="https://ec.europa.eu/consumers/odr/" target="_blank" style="word-break: break-word;">
+                        https://ec.europa.eu/consumers/odr/
+                    </a>
+
+                </p>
+                <button id="close-imprint" onclick="closeImprint()">Terms<br>Accept</button>
+            </div>
+        </div>
+
+
+        <canvas id="canvas" width="720" height="480" allowfullscreen>
+
+
+        </canvas>
+
+        <div class="controls">
+            <button id="fullscreen-toggle">
+                <img src="icons/fullscreen.png" alt="Fullscreen"></button>
+            <button id="exit-fullscreen">
+                <img src="icons/close-fullscreen.png" alt="Close-Fullscreen"></button>
+            <button id="settings-button">
+                <img src="icons/wave-sound.png" alt="Soundsettings"></button>
+        </div>
+
+        <div id="touch-controls">
+
+            <section id="position-left">
+                <button id="btn-left">
+                    <img src="icons/left-arrow.png" alt="Walk Left"></button>
+                <button id="btn-right">
+                    <img src="icons/right-arrow.png" alt="Walk Right"></button>
+            </section>
+            <section id="position-right">
+                <button id="btn-jump">
+                    <img src="icons/jump-arrow.png" alt="Jump"></button>
+                <button id="btn-throw">
+                    <img src="icons/throw-bottle.png" alt="Throw Bottle"></button>
+            </section>
+
+        </div>
+
+        <div id="overlay-handle">...</div>
+
+
+        <button id="show-control-buttons">
+            <img src="icons/main-setting.png" alt="Settings" />
+        </button>
+
+        <div id="rotate-warning">
+            <img src="icons/rotate.png" alt="Bitte das Handy drehen">
+        </div>
+
+
+        <section id="winscreen_overlay">
+            <div class="container-main">
+                <h4><strong>You Won!</strong></h4>
+
+                <div class="bttn-cont">
+                    <button class="restart" onclick="restartGame()">Try Again?</button>
+                    <button class="quit" onclick="quitGame()">Exit</button>
+                </div>
+            </div>
+            <div id="exit-overlay" style="display: none;">
+                <div class="p-cont-win">
+                    <p class="info">⚠ Your browser may block automatic closing.</p>
+                    <p class="info">Would you like to close the game manually or be redirected?</p>
+
+                    <button onclick="redirectToBlank()">Go to about:blank</button>
+                </div>
+            </div>
+        </section>
+
+
+        <section id="gameover_overlay">
+            <div class="container-main">
+                <h4><strong>Game Over!</strong></h4>
+
+                <div class="bttn-cont">
+                    <button class="restart" onclick="restartGameOver()">Play Again?</button>
+                    <button class="quit" onclick="quitGameOver()">Exit</button>
+                </div>
+
+            </div>
+            <div id="exit-overlay-gameover" style="display: none;">
+                <div class="p-cont-gameover">
+                    <p class="info">⚠ Your browser may block automatic closing.</p>
+                    <p class="info">Would you like to close the game manually or be redirected?</p>
+
+                    <button onclick="redirectToBlankGameOver()">Go to about:blank</button>
+                </div>
+            </div>
+
+    </div>
+    </section>
+
+    <label class="switch">
+        <input type="checkbox" id="toggleSwitch">
+        <span class="slider"></span>
+    </label>
+
+
+
+
+
+    </div>
+</body>
+
+</html>

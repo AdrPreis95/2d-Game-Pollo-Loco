@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: screen.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: screen.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * Indicates whether the game has started.
+ * @type {boolean}
+ */
+window.isGameStarted = false;
+
+document.addEventListener('DOMContentLoaded', () => {
+    const enterScreen = document.getElementById('enter_screen');
+    const startScreen = document.getElementById('start_screen');
+    const loadingScreen = document.getElementById('loading_screen');
+    const canvas = document.getElementById('canvas');
+    const showSettingbutton = document.getElementById('overlay-handle');
+    const introTheme = new Audio('audio/intro_theme.mp3');
+    introTheme.loop = true;
+    soundManager.registerMusic(introTheme);
+
+    enterScreen.style.display = 'flex';
+
+    /**
+  * Handles entering the start screen when the Enter key is pressed or a click occurs on the enter screen.
+  * @param {Event} event - The key press or click event.
+  */
+    const handleEnterScreen = (event) => {
+        if (event.type === 'keydown' &amp;&amp; event.key !== 'Enter') return;
+        if (event.type === 'click' &amp;&amp; event.target !== enterScreen) return;
+
+        introTheme.play().catch((error) => console.error('Error playing intro music:', error));
+        enterScreen.style.display = 'none';
+        startScreen.style.display = 'flex';
+
+        document.removeEventListener('keydown', handleEnterScreen);
+        document.removeEventListener('click', handleEnterScreen);
+    };
+
+    document.addEventListener('keydown', handleEnterScreen);
+    document.addEventListener('click', handleEnterScreen);
+
+
+    const playIcon = document.getElementById('play-icon');
+    playIcon.addEventListener('click', () => {
+        startScreen.style.display = 'none';
+        loadingScreen.style.display = 'flex';
+
+        setTimeout(() => {
+            loadingScreen.style.display = 'none';
+            canvas.style.display = 'block';
+            showSettingbutton.style.display = 'flex';
+            introTheme.pause();
+            introTheme.currentTime = 0;
+            isGameStarted = true;
+            init();
+        }, 2000);
+    });
+
+    const exitIcon = document.getElementById('exit-icon');
+    exitIcon.addEventListener('click', () => {
+        // location.reload();
+    });
+});
+
+/**
+ * Displays the game instructions.
+ */
+function showInstructions() {
+    document.getElementById("game-instructions").style.display = "block";
+}
+
+/**
+ * Closes the game instructions and plays a button sound.
+ */
+window.closeInstructions = function () {
+    const buttonSound = new Audio('audio/buttons-feedback.mp3');
+    soundManager.registerEffect(buttonSound);
+    buttonSound.play();
+
+
+    document.getElementById("game-instructions").style.display = "none";
+    document.getElementById("overlaycontainer-instructions").style.display = "none";
+}
+
+/**
+ * Dummy function to initialize the game.
+ */
+function init() {
+    console.log('Game started!');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const settingsIcon = document.getElementById('settings-icon');
+    const settingsMenu = document.getElementById('settings-menu');
+    const closeSettingsButton = document.getElementById('close-settings');
+
+    /**
+     * Opens the settings menu.
+     */
+    settingsIcon.addEventListener('click', () => {
+        settingsMenu.style.display = 'block';
+    });
+
+    /**
+     * Closes the settings menu.
+     */
+    closeSettingsButton.addEventListener('click', () => {
+        settingsMenu.style.display = 'none';
+    });
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+    const exitIcon = document.getElementById('exit-icon');
+    const exitMenu = document.getElementById('exit-menu');
+    const exitConfirm = document.getElementById('exit-confirm');
+    const exitCancel = document.getElementById('exit-cancel');
+
+    if (!exitIcon || !exitMenu || !exitConfirm || !exitCancel) {
+        console.error("❌ Exit-Overlay-Elemente nicht gefunden!");
+        return;
+    }
+
+    /**
+     * Öffnet das Exit-Overlay.
+     */
+    exitIcon.addEventListener('click', () => {
+        exitMenu.style.display = 'block';
+    });
+
+    /**
+     * Schließt das Exit-Overlay ohne das Spiel zu beenden.
+     */
+    exitCancel.addEventListener('click', () => {
+        exitMenu.style.display = 'none';
+    });
+
+    /**
+     * **Beendet das Spiel nur nach Bestätigung (`exit-confirm`).**
+     */
+    exitConfirm.addEventListener('click', () => {
+        exitMenu.style.display = 'none';
+
+        if (window.electron &amp;&amp; window.electron.exitApp) {
+            console.log("⚡ Electron erkannt → App wird geschlossen...");
+            window.electron.exitApp(); // Electron: App beenden
+        } else {
+            exitGame(); // Normaler Browser: Fenster schließen oder Fallback
+        }
+    });
+
+    /**
+     * Versucht das Spiel zu beenden (Browser).
+     * Falls `window.close()` blockiert wird, wird als Fallback `about:blank` geöffnet.
+     */
+    function exitGame() {
+        console.log("🛑 Versuche das Spiel zu beenden...");
+
+        try {
+            window.close();
+
+            setTimeout(() => {
+                if (!window.closed) {
+                    console.warn("❌ Fenster konnte nicht automatisch geschlossen werden.");
+                    redirectToBlank();
+                }
+            }, 500);
+        } catch (error) {
+            console.error("❌ Fehler beim Beenden des Spiels:", error);
+            redirectToBlank();
+        }
+    }
+
+    /**
+     * **Öffnet `about:blank`, falls `window.close()` blockiert wird.**
+     */
+    function redirectToBlank() {
+        let newTab = window.open("about:blank", "_blank");
+
+        if (newTab) {
+            newTab.document.write(`
+                &lt;html>
+                &lt;head>
+                    &lt;title>Game Closed&lt;/title>
+                    &lt;style>
+                        body {
+                            font-family: Arial, sans-serif;
+                            text-align: center;
+                            background-color: #1a1a1a;
+                            color: white;
+                            display: flex;
+                            flex-direction: column;
+                            justify-content: center;
+                            align-items: center;
+                            height: 100vh;
+                            margin: 0;
+                        }
+                        h1 {
+                            color: #ffcc00;
+                        }
+                        p {
+                            font-size: 20px;
+                        }
+                        button {
+                            padding: 10px 20px;
+                            font-size: 18px;
+                            background-color: #ff3333;
+                            color: white;
+                            border: none;
+                            cursor: pointer;
+                            margin-top: 20px;
+                        }
+                        button:hover {
+                            background-color: #cc0000;
+                        }
+                    &lt;/style>
+                &lt;/head>
+                &lt;body>
+                  &lt;h1>⚠ Game Closed&lt;/h1>
+                  &lt;p>Your browser has blocked the automatic closing of the game.&lt;/p>
+                  &lt;p>Please close this window manually.&lt;/p>
+                  &lt;button onclick="window.close()">Got it&lt;/button>
+                &lt;/body>
+                &lt;/html>
+            `);
+            newTab.document.close();
+        } else {
+            console.error("❌ Browser blockiert das Öffnen einer neuen Seite.");
+        }
+    }
+});
+
+
+
+/**
+ * Checks if the "showEnterScreen" parameter exists in the URL.
+ * Displays the enter screen if the value is set to "true".
+ */
+function checkForEnterScreen() {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('showEnterScreen') === 'true') {
+        document.getElementById('enter_screen').style.display = 'block';
+        document.getElementById('start_screen').style.display = 'none';
+        document.getElementById('game_container').style.display = 'none';
+
+    }
+}
+
+/* Executes the check for the enter screen when the page loads. */
+window.onload = checkForEnterScreen;
+
+document.addEventListener("DOMContentLoaded", () => {
+    const canvas = document.getElementById("canvas");
+    const fullscreenButton = document.getElementById("fullscreen-toggle");
+    const exitButton = document.getElementById("exit-fullscreen");
+    const settingsButton = document.getElementById("settings-button");
+    const settingsMenu = document.getElementById("settings-menu");
+    const touchControls = document.getElementById("touch-controls");
+    const controls = document.querySelector(".controls");
+    const showControlsButton = document.getElementById("show-control-buttons");
+
+    let controlsVisible = false; // Standardmäßig ausgeblendet
+
+    if (!canvas) {
+        console.error(" Canvas nicht gefunden!");
+        return;
+    }
+
+    /**
+     * Steuerung-Buttons ein-/ausblenden.
+     */
+    showControlsButton.addEventListener("click", () => {
+        controlsVisible = !controlsVisible; // Zustand umkehren
+
+        if (controlsVisible) {
+            controls.style.display = "flex";
+            touchControls.style.display = "flex";
+            console.log("🎮 Steuerung sichtbar!");
+        } else {
+            controls.style.display = "none";
+            touchControls.style.display = "none";
+            console.log("🎮 Steuerung versteckt!");
+        }
+    });
+
+    /**
+     * Aktiviert oder deaktiviert den Fullscreen-Modus.
+     */
+    function toggleFullscreen() {
+        const canvas = document.getElementById("canvas"); // Falls nötig, ID anpassen
+        const topOffset = 170;  // Platz für oberes Overlay
+        const bottomOffset = 170;  // Platz für unteres Overlay
+
+        // Prüfe, ob die Bedingung für Fullscreen-Verbot zutrifft
+        let screenWidth = window.innerWidth;
+        let screenHeight = window.innerHeight;
+        let isRestrictedSize = screenWidth >= 600 &amp;&amp; screenHeight &lt;= 699;
+
+        console.log("📏 Bildschirmbreite:", screenWidth);
+        console.log("📏 Bildschirmhöhe:", screenHeight);
+        console.log("⛔ Fullscreen erlaubt?", !isRestrictedSize);
+
+        if (isRestrictedSize) {
+            console.warn("⚠ Fullscreen-Modus ist auf dieser Auflösung nicht erlaubt!");
+            if (document.fullscreenElement) {
+                exitFullscreen(); // Falls Fullscreen aktiv ist, sofort deaktivieren
+            }
+            return; // Funktion verlassen, um Fullscreen zu blockieren
+        }
+
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen().then(() => {
+                canvas.style.width = "100vw"; // Volle Breite nutzen
+                canvas.style.height = `calc(100vh - ${topOffset + bottomOffset}px)`; // Höhe exakt berechnen
+                canvas.style.position = "absolute";
+                canvas.style.top = `${topOffset}px`; // Oben bündig setzen
+                canvas.style.bottom = `${bottomOffset}px`; // Unten exakt setzen
+                canvas.style.left = "0";
+                canvas.style.transform = "none";
+
+                ensureControlsVisible(); // Buttons sichtbar halten
+                console.log("✅ Fullscreen aktiviert");
+            }).catch(err => console.error("❌ Fehler beim Aktivieren von Fullscreen:", err));
+        } else {
+            exitFullscreen();
+        }
+    }
+
+    // Funktion zum Beenden des Fullscreen-Modus
+    function exitFullscreen() {
+        if (document.fullscreenElement) {
+            document.exitFullscreen().then(() => {
+                console.log("📴 Fullscreen deaktiviert");
+            }).catch(err => console.error("❌ Fehler beim Deaktivieren von Fullscreen:", err));
+        }
+    }
+
+    // Überwache Größenänderungen und deaktiviere Fullscreen, wenn nötig
+    window.addEventListener("resize", () => {
+        let screenWidth = window.innerWidth;
+        let screenHeight = window.innerHeight;
+        let isRestrictedSize = screenWidth >= 600 &amp;&amp; screenHeight &lt;= 699;
+
+        if (isRestrictedSize &amp;&amp; document.fullscreenElement) {
+            console.warn("⚠ Fullscreen nicht erlaubt! Wird automatisch deaktiviert.");
+            exitFullscreen();
+        }
+    });
+
+
+    /**
+     * Verlässt den Fullscreen-Modus und stellt die Canvas-Größe zurück.
+     */
+    function exitFullscreen() {
+        if (document.fullscreenElement) {
+            document.exitFullscreen().then(() => {
+                restoreCanvasSize();
+            }).catch(err => console.error("❌ Fehler beim Beenden von Fullscreen:", err));
+        } else {
+            console.warn("📢 Fullscreen war nicht aktiv.");
+        }
+    }
+
+    /**
+     * Stellt die Canvas-Größe auf Standard (720x480) zurück.
+     */
+    function restoreCanvasSize() {
+        canvas.style.removeProperty("width");
+        canvas.style.removeProperty("height");
+        canvas.style.position = "absolute";
+        canvas.style.top = "50%";
+        canvas.style.left = "50%";
+        canvas.style.transform = "translate(-50%, -50%)";
+        console.log("🔄 Canvas-Größe auf 720x480 zurückgesetzt.");
+        ensureControlsVisible();
+    }
+
+    /**
+     * Öffnet oder schließt das Settings-Menü.
+     */
+    function toggleSettingsMenu() {
+        if (!settingsMenu) {
+            console.warn("❌ Element mit ID 'settings-menu' nicht gefunden.");
+            return;
+        }
+
+        if (settingsMenu.style.display === "none" || settingsMenu.style.display === "") {
+            settingsMenu.style.display = "block";
+            settingsMenu.style.position = "fixed";
+            settingsMenu.style.top = "50%";
+            settingsMenu.style.left = "50%";
+            settingsMenu.style.transform = "translate(-50%, -50%)";
+            settingsMenu.style.width = "300px";
+            settingsMenu.style.background = "rgba(0, 0, 0, 0.9)";
+            settingsMenu.style.color = "white";
+            settingsMenu.style.padding = "20px";
+            settingsMenu.style.borderRadius = "10px";
+            settingsMenu.style.zIndex = "99999";
+            console.log("⚙️ Settings-Menü geöffnet.");
+        } else {
+            settingsMenu.style.display = "none";
+            console.log("⚙️ Settings-Menü geschlossen.");
+        }
+    }
+
+    /**
+     * Sorgt dafür, dass die Steuerung IMMER sichtbar bleibt.
+     */
+    function ensureControlsVisible() {
+        if (controlsVisible) {
+            controls.style.display = "flex";
+            touchControls.style.display = "flex";
+        }
+        showControlsButton.style.display = "flex"; // Der Button bleibt immer sichtbar
+    }
+
+    // Event-Listener für Buttons
+    fullscreenButton.addEventListener("click", toggleFullscreen);
+    exitButton.addEventListener("click", exitFullscreen);
+    settingsButton.addEventListener("click", toggleSettingsMenu);
+
+    // Prüft, ob der Fullscreen-Modus verlassen wurde und stellt Buttons sicher
+    document.addEventListener("fullscreenchange", () => {
+        if (!document.fullscreenElement) {
+            restoreCanvasSize();
+        }
+        ensureControlsVisible();
+    });
+});
+
+// Elemente auswählen
+const handle = document.getElementById("overlay-handle");
+const button = document.getElementById("show-control-buttons");
+
+// Handle klickt Button sichtbar
+handle.addEventListener("click", function () {
+    button.classList.toggle("active");
+});
+
+// Button verschwindet wieder, wenn er erneut geklickt wird
+button.addEventListener("click", function () {
+    button.classList.remove("active");
+});
+
+
+function checkRotateWarning() {
+    let rotateWarning = document.getElementById("rotate-warning");
+
+    if (!rotateWarning) {
+        console.error("❌ Rotate-Warnung (#rotate-warning) nicht gefunden!");
+        return;
+    }
+
+    let screenWidth = window.innerWidth;
+    let screenHeight = window.innerHeight;
+
+    let shouldShowWarning = screenWidth &lt; 600 &amp;&amp; screenHeight &lt; 900; // NUR bei dieser Kombination anzeigen
+
+    // 📢 Rotate-Warnung ein-/ausblenden, OHNE das CSS zu verändern
+    rotateWarning.style.display = shouldShowWarning ? "flex" : "none";
+
+    console.log("📢 Rotate Warning Visible:", shouldShowWarning);
+}
+
+// 🔄 Event-Listener für Rotation &amp; Fenstergröße
+window.addEventListener("resize", checkRotateWarning);
+window.addEventListener("load", checkRotateWarning);
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="SoundManager.html">SoundManager</a></li></ul><h3>Global</h3><ul><li><a href="global.html#checkForEnterScreen">checkForEnterScreen</a></li><li><a href="global.html#init">init</a></li><li><a href="global.html#isGameStarted">isGameStarted</a></li><li><a href="global.html#quitGame">quitGame</a></li><li><a href="global.html#restartGame">restartGame</a></li><li><a href="global.html#setupTouchControls">setupTouchControls</a></li><li><a href="global.html#showInstructions">showInstructions</a></li><li><a href="global.html#startGame">startGame</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.4</a> on Tue Feb 18 2025 21:17:48 GMT+0100 (Mitteleuropäische Normalzeit)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

@@ -1,0 +1,141 @@
+/* Game-Instructions-Responsive  */
+@media (max-width: 620px) {
+    .instructions-container {
+        font-size: larger;
+        width: -webkit-fill-available;
+
+
+    }
+}
+
+/* Enter-Screen-Responsive  */
+@media (max-width: 5000px) {
+    #enter_screen {
+        background: url('../img/keybind.jpg') !important;
+        background-size: cover !important;
+        background-position: center !important;
+        width: 100% !important;
+        height: 100vh !important;
+        /* display: flex !important; */
+        align-items: center !important;
+        justify-content: center !important;
+        text-align: center !important;
+        color: white !important;
+        font-size: 36px !important;
+        position: absolute !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+    }
+
+    #enter_screen h2 {
+        font-size: 38px;
+        color: #FFC91C;
+        filter: drop-shadow(0px 0px 1px #9A3A17) !important;
+        animation: blink 2s infinite;
+        text-align: center;
+    }
+}
+
+/* Start-Screen-Responsive */
+@media (max-width: 920px) {
+
+    .icon-container {
+        display: flex;
+        gap: 20px;
+        flex-direction: column;
+        height: 250px;
+        width: 250px;
+        align-items: center;
+        justify-content: center;
+        filter: drop-shadow(0px 0px 10px white);
+    }
+
+    #play-icon {
+        height: 250px;
+        cursor: pointer;
+        transition: transform 0.2s ease-in-out;
+    }
+
+    #setting-icon,
+    #exit-icon {
+        height: 200px;
+        cursor: pointer;
+        transition: transform 0.2s ease-in-out;
+    }
+
+
+    /* Loading-Screen-Responsive*/
+
+
+    @media (max-width: 620px) {
+        #loading-image {
+            width: 220px;
+
+        }
+    }
+
+
+    /* Canvas-Responsive*/
+
+    @media (max-width: 1050px) {
+        #canvas {
+            width: inherit;
+
+        }
+    }
+}
+
+@media (max-width: 520px) {
+    #win-img {
+        height: auto !important;
+
+    }
+
+    #gameover-img {
+        height: auto !important;
+    }
+
+
+}
+
+/* settings-menu Responsive  */
+
+@media (max-width: 650px) {
+    .overlay-content {
+        font-size: 16px !important;
+
+    }
+}
+
+
+@media (max-width: 350px) {
+    #settings-menu {
+        width: 270px;
+
+    }
+}
+
+/*Exit Menu Reponsive*/
+@media (max-width: 350px) {
+    #exit-menu {
+        width: 260px;
+
+    }
+}
+
+/* Settings-Button-Responsive*/
+@media (max-width: 1000px) {
+    #overlay-handle {
+        width: auto;
+        bottom: 122px;
+        top: unset;
+        left: unset;
+        height: unset;
+        border-radius: 50%;
+        right: unset;
+        filter: drop-shadow(0px 0px 4px white);
+        border-style: solid;
+    }
+}

@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: screen.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: screen.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * Indicates whether the game has started.
+ * @type {boolean}
+ */
+window.isGameStarted = false;
+
+document.addEventListener('DOMContentLoaded', () => {
+    const enterScreen = document.getElementById('enter_screen');
+    const startScreen = document.getElementById('start_screen');
+    const loadingScreen = document.getElementById('loading_screen');
+    const canvas = document.getElementById('canvas');
+    const introTheme = new Audio('audio/intro_theme.mp3');
+    introTheme.loop = true;
+    soundManager.registerMusic(introTheme); // Automatisch mit Musik-Volume
+
+    enterScreen.style.display = 'flex';
+
+    /**
+     * Handles entering the start screen when the Enter key is pressed.
+     * @param {KeyboardEvent} event - The key press event.
+     */
+    const handleEnterScreen = (event) => {
+        if (event.key === 'Enter') {
+            introTheme.play().catch((error) => console.error('Error playing intro music:', error));
+            enterScreen.style.display = 'none';
+            startScreen.style.display = 'flex';
+            document.removeEventListener('keydown', handleEnterScreen);
+        }
+    };
+
+    document.addEventListener('keydown', handleEnterScreen);
+
+    const playIcon = document.getElementById('play-icon');
+    playIcon.addEventListener('click', () => {
+        startScreen.style.display = 'none';
+        loadingScreen.style.display = 'flex';
+
+        setTimeout(() => {
+            loadingScreen.style.display = 'none';
+            canvas.style.display = 'block';
+            introTheme.pause();
+            introTheme.currentTime = 0;
+            isGameStarted = true;
+            init();
+        }, 2000);
+    });
+
+    const exitIcon = document.getElementById('exit-icon');
+    exitIcon.addEventListener('click', () => {
+        // location.reload();
+    });
+});
+
+/**
+ * Displays the game instructions.
+ */
+function showInstructions() {
+    document.getElementById("game-instructions").style.display = "block";
+}
+
+/**
+ * Closes the game instructions and plays a button sound.
+ */
+function closeInstructions() {
+    const buttonSound = new Audio('audio/buttons-feedback.mp3');
+    soundManager.registerEffect(buttonSound);
+    buttonSound.play();
+    
+
+    document.getElementById("game-instructions").style.display = "none";
+    document.getElementById("overlaycontainer-instructions").style.display = "none";
+}
+
+/**
+ * Dummy function to initialize the game.
+ */
+function init() {
+    console.log('Game started!');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const settingsIcon = document.getElementById('settings-icon');
+    const settingsMenu = document.getElementById('settings-menu');
+    const closeSettingsButton = document.getElementById('close-settings');
+
+    /**
+     * Opens the settings menu.
+     */
+    settingsIcon.addEventListener('click', () => {
+        settingsMenu.style.display = 'block';
+    });
+
+    /**
+     * Closes the settings menu.
+     */
+    closeSettingsButton.addEventListener('click', () => {
+        settingsMenu.style.display = 'none';
+    });
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+    const exitIcon = document.getElementById('exit-icon');
+    const exitMenu = document.getElementById('exit-menu');
+    const exitConfirm = document.getElementById('exit-confirm');
+    const exitCancel = document.getElementById('exit-cancel');
+
+    /**
+     * Opens the exit menu.
+     */
+    exitIcon.addEventListener('click', () => {
+        exitMenu.style.display = 'block';
+    });
+
+    /**
+     * Closes the exit menu without any action.
+     */
+    exitCancel.addEventListener('click', () => {
+        exitMenu.style.display = 'none';
+    });
+
+    /**
+     * Exits the game, either by closing the window or using Electron.
+     */
+    exitConfirm.addEventListener('click', () => {
+        exitMenu.style.display = 'none';
+
+        if (window.electron) {
+            window.electron.exitApp();
+        } else {
+            window.close();
+        }
+    });
+});
+
+/**
+ * Checks if the "showEnterScreen" parameter exists in the URL.
+ * Displays the enter screen if the value is set to "true".
+ */
+function checkForEnterScreen() {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('showEnterScreen') === 'true') {
+        document.getElementById('enter_screen').style.display = 'block';
+        document.getElementById('start_screen').style.display = 'none';
+        document.getElementById('game_container').style.display = 'none';
+    }
+}
+
+// document.addEventListener('DOMContentLoaded', () => {
+//     const volumeSlider = document.getElementById('volume-slider');
+//     let allGameSounds = [];
+
+//     /**
+//      * Registers a sound for later volume adjustments.
+//      * @param {HTMLAudioElement} sound - The audio element of the sound.
+//      */
+//     function registerSound(sound) {
+//         allGameSounds.push(sound);
+//     }
+
+//     /**
+//      * Adjusts the volume of all registered sounds based on the slider value.
+//      * @param {Event} event - The input event of the volume slider.
+//      */
+//     volumeSlider.addEventListener('input', (event) => {
+//         const volume = event.target.value / 100;
+//         allGameSounds.forEach(sound => {
+//             sound.volume = volume;
+//         });
+//     });
+
+//     window.registerSound = registerSound;
+// });
+
+/* Executes the check for the enter screen when the page loads. */
+window.onload = checkForEnterScreen;
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="SoundManager.html">SoundManager</a></li></ul><h3>Global</h3><ul><li><a href="global.html#checkForEnterScreen">checkForEnterScreen</a></li><li><a href="global.html#closeInstructions">closeInstructions</a></li><li><a href="global.html#init">init</a></li><li><a href="global.html#isGameStarted">isGameStarted</a></li><li><a href="global.html#quitGame">quitGame</a></li><li><a href="global.html#quitToStart">quitToStart</a></li><li><a href="global.html#restartGame">restartGame</a></li><li><a href="global.html#showInstructions">showInstructions</a></li><li><a href="global.html#startGame">startGame</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.4</a> on Thu Feb 06 2025 01:56:29 GMT+0100 (Mitteleuropäische Normalzeit)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

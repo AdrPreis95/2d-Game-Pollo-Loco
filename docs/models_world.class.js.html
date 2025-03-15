@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: models/world.class.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: models/world.class.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * Represents the game world, managing the character, level, canvas rendering, and game mechanics.
+ */
+class World {
+    /** @type {Character} The main playable character. */
+    character = new Character();
+
+    /** @type {Level} The current level of the game. */
+    level = level1;
+
+    /** @type {CanvasRenderingContext2D} The 2D rendering context for the canvas. */
+    ctx;
+
+    /** @type {HTMLCanvasElement} The canvas element where the game is drawn. */
+    canvas;
+
+    /** @type {Keyboard} The keyboard input handler. */
+    keyboard;
+
+    /** @type {number} The X-coordinate of the camera, used for scrolling. */
+    camera_x = 0;
+
+    /** @type {StatusBar} The status bar displaying health and game progress. */
+    statusBar = new StatusBar();
+
+    /** @type {ThrowableObject[]} List of throwable objects in the world. */
+    throwableObjects = [];
+
+    /** @type {DynamicObject[]} List of dynamic objects (e.g., enemies, items) in the world. */
+    dynamicObjects = [];
+
+    /** @type {number} The number of collected coins. */
+    coinsCollected = 0;
+
+    /** @type {CoinStatusBar} Status bar displaying collected coins. */
+    coinStatusBar;
+
+    /** @type {SalsaBottleStatusBar} Status bar displaying collected bottles. */
+    salsaBottleStatusBar = new SalsaBottleStatusBar();
+
+    /** @type {EndbossStatusBar} Status bar displaying Endboss health. */
+    endbossStatusBar = new EndbossStatusBar();
+
+    /** @type {number} The number of collected bottles. */
+    bottlesCollected = 0;
+
+    /** @type {number} The maximum number of bottles that can be carried. */
+    maxBottles = 5;
+
+    /** @type {Endboss} The Endboss of the level. */
+    endboss;
+
+    /** @type {HTMLImageElement} Image element for fullscreen icon. */
+    fullscreenIcon = new Image();
+
+    /** @type {HTMLImageElement} Image element for close button icon. */
+    closeIcon = new Image();
+
+    /** @type {HTMLAudioElement} Sound effect for collecting a coin */
+    coinSound = new Audio('audio/get-coin.mp3');
+
+    /** @type {HTMLAudioElement} Sound effect for picking up a bottle */
+    bottleSound = new Audio('audio/get-bottle.mp3');
+
+    /** @type {HTMLAudioElement} Sound effect for bottle splash */
+    splashBottleSound = new Audio('audio/bottle-splash.mp3');
+
+    /** @type {HTMLAudioElement} Sound effect for character death */
+    dieCharacterSound = new Audio('audio/die-character.mp3');
+
+
+    /**
+     * Initializes the game world, setting up the character, level, and game mechanics.
+     * @param {HTMLCanvasElement} canvas - The canvas element for rendering the game.
+     * @param {Keyboard} keyboard - The keyboard handler for player input.
+     */
+    constructor(canvas, keyboard) {
+        this.ctx = canvas.getContext('2d');
+        this.canvas = canvas;
+        this.keyboard = keyboard;
+        this.coinStatusBar = new CoinStatusBar();
+
+        this.endboss = new Endboss(this);
+        this.endbossStatusBar = new EndbossStatusBar();
+        this.level = level1;
+        this.maxCoins = this.level.coins.length;
+
+        this.setWorld();
+        this.draw();
+        this.run();
+        this.fullscreenIcon.src = 'icons/fullscreen-icon.png';
+        this.closeIcon.src = 'icons/close-x-icon.png';
+
+        this.addCanvasClickListener();
+
+        if (window.soundManager) {
+            soundManager.registerEffect(this.coinSound);
+            soundManager.registerEffect(this.bottleSound);
+            soundManager.registerEffect(this.splashBottleSound);
+            soundManager.registerEffect(this.dieCharacterSound);
+        } else {
+            console.error(" SoundManager fehlerhaft");
+        }
+
+    }
+
+    /**
+     * this function draws the fullscreen icon in the canvas element
+     */
+    drawIcons() {
+
+        this.ctx.drawImage(
+            this.fullscreenIcon,
+            this.canvas.width - 70,
+            480 - 50,
+            30,
+            30
+        );
+        /**
+         * this function draws the close.fullscreeen icon in the canvas element
+         */
+        this.ctx.drawImage(
+            this.closeIcon,
+            20,
+            480 - 50,
+            30,
+            30
+        );
+    }
+
+
+
+    addObject(obj) {
+        if (!this.dynamicObjects) this.dynamicObjects = [];
+        this.dynamicObjects.push(obj);
+    }
+
+    removeObject(obj) {
+        if (!this.dynamicObjects) {
+            console.error('DynamicObjects array is undefined');
+            return;
+        }
+        const index = this.dynamicObjects.indexOf(obj);
+        if (index > -1) {
+            this.dynamicObjects.splice(index, 1);
+        } else {
+            console.warn('Object not found in dynamicObjects');
+        }
+    }
+
+
+    setWorld() {
+        this.character.world = this;
+        this.level.enemies.forEach((enemy) => {
+            enemy.world = this;
+        });
+        this.maxCoins = this.level.coins.length; // Aktualisiert die Anzahl der maximalen Coins im Level
+    }
+
+
+    run() {
+        setInterval(() => {
+            this.checkCollisions();
+            this.checkThrowObjects();
+        }, 200);
+    }
+    /**
+     * checks the picked up bottles and handles the statsbar 
+     */
+    checkThrowObjects() {
+        if (this.keyboard.F &amp;&amp; this.bottlesCollected > 0) {
+
+            let bottle = new ThrowableObject(this.character.x + 100, this.character.y + 100, this);
+            this.throwableObjects.push(bottle);
+            this.bottlesCollected--;
+            this.updateSalsaBottleStatusBar();
+        }
+    }
+
+    /**
+     * this function checks all collisions between enemies , coins , bottles , endboss
+     * it also handles the sound of the situations and works together with out statsbar functions
+     */
+    checkCollisions() {
+
+        this.level.coins.forEach((coin, index) => {
+            if (this.character.isColliding(coin)) {
+                this.coinsCollected++;
+                this.level.coins.splice(index, 1);
+                this.updateCoinStatusBar();
+                console.log('Coin eingesammelt. Aktueller Stand:', this.coinsCollected);
+
+                // Sound abspielen
+                const coinSound = new Audio('audio/get-coin.mp3');
+                
+                this.coinSound.play();
+            }
+        });
+        this.level.salsaBottles.forEach((bottle, index) => {
+            if (this.character.isColliding(bottle)) {
+                console.log('Salsa-Bottle eingesammelt:', bottle);
+                this.bottlesCollected++;
+                this.level.salsaBottles.splice(index, 1);
+                this.updateSalsaBottleStatusBar();
+
+                const bottleSound = new Audio('audio/get-bottle.mp3');
+
+                this.bottleSound.play();
+            }
+        });
+
+
+        this.throwableObjects.forEach((bottle, bottleIndex) => {
+            console.log('Prüfe geworfene Flasche:', bottle);
+            this.level.enemies.forEach((enemy) => {
+                console.log('Prüfe Gegner:', enemy);
+                if (bottle.isColliding(enemy)) {
+                    console.log('Kollision erkannt: Flasche hat Gegner getroffen.');
+                    if (enemy instanceof Endboss) {
+                        enemy.hit();
+                        console.log('Endboss Energie nach Treffer:', enemy.energy);
+                    }
+                    this.throwableObjects.splice(bottleIndex, 1);
+
+                    const splashBottleSound = new Audio('audio/bottle-splash.mp3');
+                    this.splashBottleSound.play();
+                }
+            });
+        });
+
+
+        const endboss = this.level.enemies.find(e => e instanceof Endboss);
+        if (endboss &amp;&amp; !endboss.isDead) {
+            console.log('Endboss gefunden. Energie:', endboss.energy);
+            this.endbossStatusBar.setPercentage(endboss.energy);
+        } else if (endboss &amp;&amp; endboss.isDead) {
+            console.log('Endboss ist tot.');
+        } else {
+            console.warn('Endboss nicht gefunden!');
+        }
+
+
+        this.level.enemies.forEach((enemy) => {
+            if (this.character.isColliding(enemy)) {
+                console.log('Charakter kollidiert mit Gegner:', enemy);
+
+                if (this.character.isAboveGround() &amp;&amp; this.character.speedY &lt; 0) {
+
+                    enemy.hitCount--;
+                    if (enemy.hitCount &lt;= 0 &amp;&amp; !enemy.isDead) {
+                        enemy.die();
+                    }
+                    this.character.speedY = 15;
+                } else if (!enemy.isDead &amp;&amp; !this.character.isHurt()) {
+
+                    this.character.hit();
+                    this.statusBar.setPercentage(this.character.energy);
+                    this.character.playHitSoundOnce();
+                }
+            }
+        });
+
+        if (this.character.isDead() &amp;&amp; !this.character.isDeathHandled) {
+            console.log('Charakter ist gestorben.');
+
+            this.character.isDeathHandled = true;
+
+            this.character.playAnimation(this.character.IMAGES_DEAD);
+
+            const dieCharacterSound = new Audio('audio/die-character.mp3');
+            this.dieCharacterSound.play();
+
+
+            setTimeout(() => {
+                this.gameOver();
+            }, 2000);
+        }
+
+    }
+    /**
+   * Handles the character's death by triggering a "Game Over" sequence.
+   * If the character is dead, the game reloads after a delay.
+   * @returns {void} No return value.
+   */
+    handleCharacterDeath() {
+        if (!this.character.isDead) return;
+        setTimeout(() => {
+            console.log('Game Over!');
+            location.reload(); // Reload the page after 3 seconds
+        }, 3000);
+    }
+
+    /**
+     * Updates the coin status bar to reflect the percentage of collected coins.
+     * Ensures the status bar displays the correct progress.
+     * @returns {void} No return value.
+     */
+    updateCoinStatusBar() {
+        if (this.maxCoins > 0) {
+            const percentage = (this.coinsCollected / this.maxCoins) * 100;
+            this.coinStatusBar.setPercentage(percentage);
+        }
+    }
+
+
+    /**
+     * updates our salsabottle statsbar
+     */
+    updateSalsaBottleStatusBar() {
+        const percentage = (this.bottlesCollected / this.maxBottles) * 100;
+        this.salsaBottleStatusBar.setPercentage(percentage);
+    }
+
+
+    /**
+     * this is our main draw method, which draws and show all object in the canvas element
+     */
+    draw() {
+
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        this.ctx.translate(this.camera_x, 0);
+
+        this.addObjectsToMap(this.level.backgroundObjects);
+        this.ctx.translate(-this.camera_x, 0);
+
+        this.addToMap(this.statusBar);
+
+        this.addToMap(this.coinStatusBar);
+
+        this.addToMap(this.salsaBottleStatusBar);
+
+        this.addToMap(this.endbossStatusBar);
+
+        this.drawIcons();
+
+
+        this.ctx.translate(this.camera_x, 0);
+
+
+        this.addToMap(this.character);
+        this.addObjectsToMap(this.level.enemies);
+        this.addObjectsToMap(this.level.clouds);
+        this.addObjectsToMap(this.level.coins);
+        this.addObjectsToMap(this.level.salsaBottles);
+
+        this.addObjectsToMap(this.throwableObjects);
+        this.addObjectsToMap(this.dynamicObjects);
+
+        this.ctx.translate(-this.camera_x, 0);
+
+        let self = this;
+        requestAnimationFrame(function () {
+            self.draw();
+        });
+    }
+
+    /**
+     * Handled the clos and opfen fullscreen click position
+     */
+    addCanvasClickListener() {
+        this.canvas.addEventListener("click", (event) => {
+
+            const rect = this.canvas.getBoundingClientRect();
+            const clickX = event.clientX - rect.left;
+            const clickY = event.clientY - rect.top;
+
+            if (
+                clickX >= this.canvas.width - 70 &amp;&amp;
+                clickX &lt;= this.canvas.width - 20 &amp;&amp;
+                clickY >= 480 - 50 &amp;&amp;
+                clickY &lt;= 480
+            ) {
+                this.toggleFullscreen();
+            }
+
+
+            if (
+                clickX >= 20 &amp;&amp;
+                clickX &lt;= 70 &amp;&amp;
+                clickY >= 480 - 50 &amp;&amp;
+                clickY &lt;= 480
+            ) {
+                this.restoreCanvasSize();
+            }
+        });
+    }
+    /**
+     * Is for the Webbrowser experience
+     */
+    toggleFullscreen() {
+        if (this.canvas.requestFullscreen) {
+            this.canvas.requestFullscreen();
+        } else if (this.canvas.mozRequestFullScreen) {
+            this.canvas.mozRequestFullScreen();
+        } else if (this.canvas.webkitRequestFullscreen) {
+            this.canvas.webkitRequestFullscreen();
+        } else if (this.canvas.msRequestFullscreen) {
+            this.canvas.msRequestFullscreen();
+        }
+        console.log('Canvas ist jetzt im Vollbildmodus.');
+    }
+
+    exitFullscreen() {
+        if (document.exitFullscreen) {
+            document.exitFullscreen();
+        } else if (document.mozCancelFullScreen) {
+            document.mozCancelFullScreen();
+        } else if (document.webkitExitFullscreen) {
+            document.webkitExitFullscreen();
+        } else if (document.msExitFullscreen) {
+            document.msExitFullscreen();
+        }
+        console.log('Vollbildmodus beendet.');
+    }
+
+    addToMap(mo) {
+        if (mo.otherDirection) {
+            this.flipImage(mo);
+        }
+        mo.draw(this.ctx);
+        mo.drawFrame(this.ctx);
+        if (mo.otherDirection) {
+            this.flipImageBack(mo);
+        }
+    }
+
+
+    /**
+  * Adds an array of objects to the game map by calling `addToMap` on each object.
+  * @param {Array&lt;Object>} objects - The array of objects to be added to the map.
+  * @returns {void} No return value.
+  */
+    addObjectsToMap(objects) {
+        objects.forEach((obj) => {
+            this.addToMap(obj);
+        });
+    }
+
+    /**
+     * Flips an image horizontally for mirroring effects.
+     * Saves the current canvas state, translates the image, and scales it negatively.
+     * @param {MoveableObject} mo - The object whose image should be flipped.
+     * @returns {void} No return value.
+     */
+    flipImage(mo) {
+        this.ctx.save();
+        this.ctx.translate(mo.width, 0);
+        this.ctx.scale(-1, 1);
+        mo.x = mo.x * -1;
+    }
+
+    /**
+     * Restores the flipped image back to its original orientation.
+     * @param {MoveableObject} mo - The object whose image should be restored.
+     * @returns {void} No return value.
+     */
+    flipImageBack(mo) {
+        mo.x = mo.x * -1;
+        this.ctx.restore();
+    }
+
+
+    /**
+   * Displays the victory screen overlay when the player wins the game.
+   * Draws a semi-transparent black background and displays a victory message in the center.
+   * @returns {void} No return value.
+   */
+    showVictoryScreen() {
+        this.ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+        this.ctx.font = "50px Arial";
+        this.ctx.fillStyle = "white";
+        this.ctx.textAlign = "center";
+        this.ctx.fillText("Gewonnen!", this.canvas.width / 2, this.canvas.height / 2);
+    }
+
+    /**
+     * Handles the game over sequence.
+     * Logs "Game Over!" to the console and redirects the player to the game over screen after a delay.
+     * @returns {void} No return value.
+     */
+    gameOver() {
+        // console.log('Game Over!');
+        setTimeout(() => {
+            window.location.href = 'gameover.html';
+        }, 1500);
+    }
+
+
+
+
+
+}
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="BackgroundObject.html">BackgroundObject</a></li><li><a href="BottleSplash.html">BottleSplash</a></li><li><a href="Character.html">Character</a></li><li><a href="Chicken.html">Chicken</a></li><li><a href="Cloud.html">Cloud</a></li><li><a href="Coin.html">Coin</a></li><li><a href="CoinStatusBar.html">CoinStatusBar</a></li><li><a href="CustomKeyboard.html">CustomKeyboard</a></li><li><a href="DrawableObject.html">DrawableObject</a></li><li><a href="Endboss.html">Endboss</a></li><li><a href="EndbossStatusBar.html">EndbossStatusBar</a></li><li><a href="Level.html">Level</a></li><li><a href="MoveableObject.html">MoveableObject</a></li><li><a href="SalsaBottle.html">SalsaBottle</a></li><li><a href="SalsaBottleStatusBar.html">SalsaBottleStatusBar</a></li><li><a href="SmallChicken.html">SmallChicken</a></li><li><a href="SoundManager.html">SoundManager</a></li><li><a href="StatusBar.html">StatusBar</a></li><li><a href="ThrowableObject.html">ThrowableObject</a></li><li><a href="World.html">World</a></li></ul><h3>Global</h3><ul><li><a href="global.html#checkForEnterScreen">checkForEnterScreen</a></li><li><a href="global.html#closeInstructions">closeInstructions</a></li><li><a href="global.html#init">init</a></li><li><a href="global.html#isGameStarted">isGameStarted</a></li><li><a href="global.html#quitGame">quitGame</a></li><li><a href="global.html#quitToStart">quitToStart</a></li><li><a href="global.html#restartGame">restartGame</a></li><li><a href="global.html#showInstructions">showInstructions</a></li><li><a href="global.html#startGame">startGame</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.4</a> on Thu Feb 06 2025 02:04:42 GMT+0100 (Mitteleuropäische Normalzeit)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

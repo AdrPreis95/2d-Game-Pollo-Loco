@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: models/character.class.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: models/character.class.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * Represents the main playable character in the game.
+ * Extends the MoveableObject class and includes animations, sounds, and movement logic.
+ */
+class Character extends MoveableObject {
+    /** @type {boolean} Flag to indicate if the death sequence has been handled. */
+    isDeathHandled = false;
+
+    /** @type {number} Character height in pixels. */
+    height = 280;
+
+    /** @type {number} Character width in pixels. */
+    width = 160;
+
+    /** @type {number} Initial Y-position of the character. */
+    y = 140;
+
+    /** @type {number} Movement speed of the character. */
+    speed = 10;
+
+    /**
+     * @type {string[]} Array of Images Paths for our Character standing still Animation
+     */
+    IMAGES_IDLE = [
+        'img/2_character_pepe/1_idle/idle/I-1.png',
+        'img/2_character_pepe/1_idle/idle/I-2.png',
+        'img/2_character_pepe/1_idle/idle/I-3.png',
+        'img/2_character_pepe/1_idle/idle/I-4.png',
+        'img/2_character_pepe/1_idle/idle/I-5.png',
+        'img/2_character_pepe/1_idle/idle/I-6.png',
+        'img/2_character_pepe/1_idle/idle/I-7.png',
+        'img/2_character_pepe/1_idle/idle/I-8.png',
+        'img/2_character_pepe/1_idle/idle/I-9.png',
+        'img/2_character_pepe/1_idle/idle/I-10.png'
+    ];
+
+
+    /** 
+ * @type {string[]} Array of image paths for the sleep animation.
+ */
+    IMAGES_LONG_IDLE = [
+        'img/2_character_pepe/1_idle/long_idle/I-11.png',
+        'img/2_character_pepe/1_idle/long_idle/I-12.png',
+        'img/2_character_pepe/1_idle/long_idle/I-13.png',
+        'img/2_character_pepe/1_idle/long_idle/I-14.png',
+        'img/2_character_pepe/1_idle/long_idle/I-15.png',
+        'img/2_character_pepe/1_idle/long_idle/I-16.png',
+        'img/2_character_pepe/1_idle/long_idle/I-17.png',
+        'img/2_character_pepe/1_idle/long_idle/I-18.png',
+        'img/2_character_pepe/1_idle/long_idle/I-19.png',
+        'img/2_character_pepe/1_idle/long_idle/I-20.png'
+    ];
+
+
+    /** 
+     * @type {string[]} Array of image paths for the walking animation.
+     */
+    IMAGES_WALKING = [
+        'img/2_character_pepe/2_walk/W-21.png',
+        'img/2_character_pepe/2_walk/W-22.png',
+        'img/2_character_pepe/2_walk/W-23.png',
+        'img/2_character_pepe/2_walk/W-24.png',
+        'img/2_character_pepe/2_walk/W-25.png',
+        'img/2_character_pepe/2_walk/W-26.png'
+    ];
+
+    /** 
+     * @type {string[]} Array of image paths for the jumping animation.
+     */
+    IMAGES_JUMPING = [
+        "img/2_character_pepe/3_jump/J-31.png",
+        "img/2_character_pepe/3_jump/J-32.png",
+        "img/2_character_pepe/3_jump/J-33.png",
+        "img/2_character_pepe/3_jump/J-34.png",
+        "img/2_character_pepe/3_jump/J-35.png",
+        "img/2_character_pepe/3_jump/J-36.png",
+        "img/2_character_pepe/3_jump/J-37.png",
+        "img/2_character_pepe/3_jump/J-38.png",
+        "img/2_character_pepe/3_jump/J-39.png"
+    ];
+
+    /** 
+     * @type {string[]} Array of image paths for the death animation.
+     */
+    IMAGES_DEAD = [
+        'img/2_character_pepe/5_dead/D-51.png',
+        'img/2_character_pepe/5_dead/D-52.png',
+        'img/2_character_pepe/5_dead/D-53.png',
+        'img/2_character_pepe/5_dead/D-54.png',
+        'img/2_character_pepe/5_dead/D-55.png',
+        'img/2_character_pepe/5_dead/D-56.png',
+        'img/2_character_pepe/5_dead/D-57.png'
+    ];
+
+    /** 
+     * @type {string[]} Array of image paths for the hurt animation.
+     */
+    IMAGES_HURT = [
+        'img/2_character_pepe/4_hurt/H-41.png',
+        'img/2_character_pepe/4_hurt/H-42.png',
+        'img/2_character_pepe/4_hurt/H-43.png'
+    ];
+
+    /** @type {any} Reference to the game world object. */
+    world;
+
+    /** @type {HTMLAudioElement} Audio element for walking sound effect. */
+    walking_sound = new Audio('audio/walk.mp3');
+
+    /** @type {HTMLAudioElement} Audio element for jumping sound effect. */
+    jumpSound = new Audio('audio/jump.mp3');
+
+    /** @type {HTMLAudioElement} Audio element for character hit sound effect. */
+    hitCharacterSound = new Audio('audio/hit-chracter.mp3');
+
+    /** @type {HTMLAudioElement} Audio element for character death sound effect. */
+    dieCharacterSound = new Audio('audio/die-character.mp3');
+
+    /** @type {HTMLAudioElement} Audio element for sleep effect. */
+    sleepSound = new Audio('audio/sleep-character.mp3');
+
+
+    /**
+     * Initializes the character, loads images, applies gravity, and starts animations.
+     */
+    constructor() {
+        super().loadImage('img/2_character_pepe/1_idle/idle/I-1.png');
+        this.loadImages(this.IMAGES_IDLE);
+        this.loadImages(this.IMAGES_LONG_IDLE);
+        this.loadImages(this.IMAGES_WALKING);
+        this.loadImages(this.IMAGES_JUMPING);
+        this.loadImages(this.IMAGES_DEAD);
+        this.loadImages(this.IMAGES_HURT);
+        this.applyGravity();
+        this.animate();
+
+        if (window.soundManager) {
+            soundManager.registerEffect(this.walking_sound);
+            soundManager.registerEffect(this.jumpSound);
+            soundManager.registerEffect(this.hitCharacterSound);
+            soundManager.registerEffect(this.dieCharacterSound);
+            soundManager.registerEffect(this.sleepSound);
+        } else {
+            console.error("SoundManager fehler");
+        }
+
+    }
+
+    /**
+ * Handles the character's animation and movement updates.
+ * Continuously checks for keyboard inputs and updates the character's position,
+ * movement direction, and animation frames accordingly.
+ * Runs two intervals: 
+ * - One for movement at 60 FPS.
+ * - One for animation frame updates every 50ms.
+ * @returns {void} No return value.
+ */
+    /**
+    * Starts all character animation intervals.
+    */
+    animate() {
+        this.startMovementCheck();
+        this.startAnimationUpdate();
+        this.startIdleCheck();
+    }
+
+    /**
+     * Starts the interval for checking character movement.
+     */
+    startMovementCheck() {
+        setInterval(() => {
+            if (!isGameStarted || !this.world || !this.world.keyboard) return;
+            this.updateMovement();
+        }, 1000 / 60);
+    }
+
+    /**
+     * Updates character movement based on keyboard input.
+     */
+    updateMovement() {
+        let moving = false;
+        if (this.world.keyboard.RIGHT &amp;&amp; this.x &lt; this.world.level.level_end_x) {
+            this.moveCharacter(true);
+            moving = true;
+        }
+        if (this.world.keyboard.LEFT &amp;&amp; this.x > 0) {
+            this.moveCharacter(false);
+            moving = true;
+        }
+        if (this.world.keyboard.SPACE &amp;&amp; !this.isAboveGround()) {
+            this.jump();
+            moving = true;
+        }
+        if (moving) this.world.camera_x = -this.x + 100;
+    }
+
+    /**
+     * Moves the character left or right.
+     * @param {boolean} right - True for right, false for left.
+     */
+    moveCharacter(right) {
+        if (right) {
+            this.moveRight();
+            this.otherDirection = false;
+        } else {
+            this.moveLeft();
+            this.otherDirection = true;
+        }
+        this.playWalkingSound();
+    }
+
+    /**
+     * Starts the interval for updating character animations.
+     */
+    startAnimationUpdate() {
+        setInterval(() => {
+            if (!isGameStarted || !this.world || !this.world.keyboard) return;
+            this.updateAnimation();
+        }, 50);
+    }
+    /**
+     * Handles the character's jump animation separately.
+     * Ensures that jumping animation only plays while the character is moving up.
+     */
+    handleJumpAnimation() {
+        if (this.isAboveGround() &amp;&amp; this.speedY > 0) { // Nur wenn der Charakter steigt
+            this.playAnimation(this.IMAGES_JUMPING);
+        }
+    }
+    resetIdleState() {
+        clearTimeout(this.idleTimer);
+        this.idleTimer = null;
+        this.currentAnimation = null; // Setzt Animation zurück
+        if (this.isSleeping) this.stopLongIdleAnimation();
+    }
+    handleIdleAnimation() {
+        if (!this.idleTimer) {
+            this.idleTimer = setTimeout(() => {
+                if (!this.isCharacterMoving() &amp;&amp; this.currentAnimation !== this.IMAGES_IDLE) {
+                    this.playAnimation(this.IMAGES_IDLE);
+                    this.currentAnimation = this.IMAGES_IDLE; // Speichert aktuelle Animation
+                }
+            }, 1000); // 1 Sekunde Wartezeit nach Bewegung oder Sprung
+        }
+    }
+
+    playAnimation(images) {
+        if (this.currentAnimation === images) return; // Falls Animation schon läuft, nichts tun
+        this.currentAnimation = images;
+
+        let frameIndex = 0;
+        clearInterval(this.animationInterval); // Stoppt vorherige Animation
+
+        // Unterschiedliche Geschwindigkeiten je nach Animation
+        let frameTime = 100; // Standardwert
+
+        if (images === this.IMAGES_IDLE) frameTime = 150; // Idle langsamer
+        else if (images === this.IMAGES_WALKING) frameTime = 80; // Walking schneller
+        else if (images === this.IMAGES_JUMPING) frameTime = 90; // Jumping leicht langsamer
+        else if (images === this.IMAGES_LONG_IDLE) frameTime = 200; // Long-Idle noch langsamer
+        else if (images === this.IMAGES_HURT) frameTime = 90; // Hurt etwas schneller
+        else if (images === this.IMAGES_DEAD) frameTime = 150; // Death-Animation mittlere Geschwindigkeit
+
+        this.animationInterval = setInterval(() => {
+            if (this.currentAnimation !== images) {
+                clearInterval(this.animationInterval); // Falls Animation wechselt, stoppen
+                return;
+            }
+            this.img = this.imageCache[images[frameIndex]];
+            frameIndex = (frameIndex + 1) % images.length;
+        }, frameTime);
+    }
+
+
+    /**
+     * Updates the character's animation based on its state.
+     */
+    updateAnimation() {
+        if (this.isDead()) {
+            this.handleCharacterDeath();
+        } else if (this.isHurt()) {
+            this.playAnimation(this.IMAGES_HURT);
+        } else if (this.isAboveGround()) {
+            this.handleJumpAnimation();
+        } else {
+            this.handleLandingAnimation(); // NEU: Sanfte Landung
+            if (this.world.keyboard.RIGHT || this.world.keyboard.LEFT) {
+                this.playAnimation(this.IMAGES_WALKING);
+            } else {
+                this.handleIdleAnimation();
+            }
+        }
+    }
+    handleLandingAnimation() {
+        if (!this.isAboveGround() &amp;&amp; this.currentAnimation === this.IMAGES_JUMPING) {
+            this.img = this.imageCache[this.IMAGES_JUMPING[this.IMAGES_JUMPING.length - 1]];
+            setTimeout(() => {
+                if (!this.isCharacterMoving()) {
+                    this.playAnimation(this.IMAGES_IDLE);
+                } else {
+                    this.playAnimation(this.IMAGES_WALKING);
+                }
+            }, 50); // 100ms Verzögerung für sanfteren Übergang
+        }
+    }
+
+
+
+    /**
+     * Handles the character's death animation and game over trigger.
+     */
+    handleCharacterDeath() {
+        this.playAnimation(this.IMAGES_DEAD);
+        setTimeout(() => this.world.gameOver(), 5000);
+    }
+
+    /**
+     * Starts the interval for checking if the character is idle.
+     */
+    startIdleCheck() {
+        setInterval(() => {
+            if (!isGameStarted || !this.world || !this.world.keyboard) return;
+            this.checkIdleState();
+        }, 250);
+    }
+
+    /**
+     * Checks if the character is idle and updates animation accordingly.
+     */
+    checkIdleState() {
+        if (this.isCharacterMoving()) {
+            this.resetIdleState();
+        } else {
+            if (!this.idleTimer) {
+                this.idleTimer = setTimeout(() => {
+                    if (!this.isCharacterMoving() &amp;&amp; this.currentAnimation !== this.IMAGES_LONG_IDLE) {
+                        this.playLongIdleAnimation();
+                    }
+                }, 5000); // Nach 5 Sekunden ohne Bewegung: Long-Idle starten
+            }
+        }
+    }
+
+
+    /**
+     * Determines if the character is currently moving.
+     * @returns {boolean} True if moving, false otherwise.
+     */
+    isCharacterMoving() {
+        return this.world.keyboard.RIGHT ||
+            this.world.keyboard.LEFT ||
+            this.isAboveGround() ||
+            this.isHurt() ||
+            this.isDead();
+    }
+
+    /**
+     * Resets the idle state of the character.
+     */
+    resetIdleState() {
+        clearTimeout(this.idleTimer);
+        this.idleTimer = null;
+        if (this.isSleeping) this.stopLongIdleAnimation();
+    }
+
+    /**
+     * Handles the idle animation when the character is not moving.
+     */
+    handleIdleAnimation() {
+        if (!this.idleTimer) {
+            this.idleTimer = setTimeout(() => {
+                if (!this.isCharacterMoving()) this.playLongIdleAnimation();
+            }, 3000);
+        }
+        if (!this.isSleeping) this.playAnimation(this.IMAGES_IDLE);
+    }
+
+    /**
+         * Determines if the character is on the ground.
+         * Adjust this value if the character is floating or sinking.
+         * @returns {boolean} True if the character is on the ground.
+         */
+    isOnGround() {
+        return this.y >= 140;
+    }
+
+    /**
+     * Starts the Long Idle Animation
+     */
+    playLongIdleAnimation() {
+        if (this.isSleeping) return; // Falls Long-Idle bereits läuft, nichts tun
+
+        this.isSleeping = true;
+        this.currentAnimation = this.IMAGES_LONG_IDLE; // Setzt aktuelle Animation
+        if (this.sleepSound) {
+            this.sleepSound.play().catch(() => { }); // Fehler ignorieren
+        }
+
+        let frameIndex = 0;
+        clearInterval(this.longIdleInterval); // Vorherige Animation stoppen
+        this.longIdleInterval = setInterval(() => {
+            if (!this.isSleeping || this.currentAnimation !== this.IMAGES_LONG_IDLE) {
+                clearInterval(this.longIdleInterval); // Falls Animation wechselt, stoppen
+                return;
+            }
+            this.img = this.imageCache[this.IMAGES_LONG_IDLE[frameIndex]];
+            frameIndex = (frameIndex + 1) % this.IMAGES_LONG_IDLE.length;
+        }, 200); // NEU: Long-Idle langsamer (200ms statt 100ms)
+    }
+
+
+    /**
+     * Stops the Long Idle Animation
+     */
+    stopLongIdleAnimation() {
+        this.isSleeping = false;
+        this.currentAnimation = null; // Setzt Animation zurück
+        clearInterval(this.longIdleInterval);
+        if (this.sleepSound) {
+            this.sleepSound.pause();
+            this.sleepSound.currentTime = 0;
+        }
+    }
+
+
+
+    /**
+     * Makes the character bounce when hitting an enemy.
+     * The bounce height depends on the enemy type.
+     *
+     * @param {*} enemy The enemy object that the character collides with.
+     */
+    bounce(enemy) {
+        if (enemy instanceof SmallChicken) {
+            this.speedY = 22;
+        } else {
+            this.speedY = 15;
+        }
+        setTimeout(() => {
+            if (this.y > 140) {
+                this.y = 140;
+                this.speedY = 0;
+            }
+        }, 50);
+    }
+
+    /**
+     * Handles the character taking damage. 
+     * Reduces energy by 20 if the character is not already dead or recently hurt.
+     * If energy reaches 0, the character dies.
+     * @returns {void} No return value.
+     */
+    hit() {
+        if (this.isDead()) return;
+        const now = Date.now();
+        if (this.isHurt()) return;
+
+        this.lastHit = now;
+        this.energy -= 20;
+
+        this.playHitSoundOnce();
+
+        if (this.energy &lt;= 0) {
+            this.energy = 0;
+            this.die();
+        }
+    }
+
+    /**
+     * Handles the character's death. 
+     * If the character is not already dead, it sets energy to 0, records the last hit time, 
+     * and triggers the game over sequence after a delay.
+     * @returns {void} No return value.
+     */
+    die() {
+
+        if (this.isDead) return;
+        this.isDead = true;
+        stopAllSounds();
+        stopAllIntervals();
+        if (this.animationInterval) clearInterval(this.animationInterval);
+        if (this.movementInterval) clearInterval(this.movementInterval);
+        this.playAnimation(this.IMAGES_DEAD);
+        if (this.dieCharacterSound) {
+            this.dieCharacterSound.pause();
+            this.dieCharacterSound.currentTime = 0;
+            this.dieCharacterSound.volume = 0.3;
+            this.dieCharacterSound.play().catch((error) => {
+                console.error("Error playing death sound:", error);
+            });
+        } else {
+            console.error("Death sound not founsd");
+        }
+        setTimeout(() => {
+            isGameStarted = false;
+            this.world.gameOver();
+        }, 2000);
+    }
+
+    /**
+     * Checks if the character is currently hurt.
+     * @returns {boolean} Returns true if the character was hit in the last second, otherwise false.
+     */
+    isHurt() {
+        const now = Date.now();
+        return now - this.lastHit &lt; 1000;
+    }
+
+    /**
+     * Plays the walking sound effect if the game has started and the sound is not already playing.
+     * @returns {void} No return value.
+     */
+    playWalkingSound() {
+        if (!isGameStarted || !this.walking_sound.paused) return;
+        this.walking_sound.play().catch((error) => {
+            console.error('Error while playing the walking sound:', error);
+        });
+    }
+
+    /**
+     * Makes the character jump by setting its vertical speed and playing the jump sound.
+     * @returns {void} No return value.
+     */
+    jump() {
+        this.speedY = 25;
+        this.playJumpSound();
+    }
+
+    /**
+     * 
+     * @returns {Promise} makes sure, that the gamesound only starts when the game start is clicked
+     */
+    playJumpSound() {
+        if (!isGameStarted || !this.jumpSound.paused) return;
+        this.jumpSound.play().catch(() => { }); // Fehler wird ignoriert
+    }
+
+    /**
+     * plays the hitsound of the character one time and not in a row.
+     * @returns {Promise&lt;void>} gives an promise back, which controls and preefs.
+     */
+    playHitSoundOnce() {
+        if (!isGameStarted || !this.hitCharacterSound.paused) return;
+        this.hitCharacterSound.play().catch(() => { }); // Fehler wird ignoriert
+    }
+
+}</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="BackgroundObject.html">BackgroundObject</a></li><li><a href="BottleSplash.html">BottleSplash</a></li><li><a href="Character.html">Character</a></li><li><a href="Chicken.html">Chicken</a></li><li><a href="Cloud.html">Cloud</a></li><li><a href="Coin.html">Coin</a></li><li><a href="CoinStatusBar.html">CoinStatusBar</a></li><li><a href="CustomKeyboard.html">CustomKeyboard</a></li><li><a href="DrawableObject.html">DrawableObject</a></li><li><a href="Endboss.html">Endboss</a></li><li><a href="EndbossStatusBar.html">EndbossStatusBar</a></li><li><a href="Level.html">Level</a></li><li><a href="MoveableObject.html">MoveableObject</a></li><li><a href="SalsaBottle.html">SalsaBottle</a></li><li><a href="SalsaBottleStatusBar.html">SalsaBottleStatusBar</a></li><li><a href="SmallChicken.html">SmallChicken</a></li><li><a href="SoundManager.html">SoundManager</a></li><li><a href="StatusBar.html">StatusBar</a></li><li><a href="ThrowableObject.html">ThrowableObject</a></li><li><a href="World.html">World</a></li></ul><h3>Global</h3><ul><li><a href="global.html#checkForEnterScreen">checkForEnterScreen</a></li><li><a href="global.html#checkRotateWarning">checkRotateWarning</a></li><li><a href="global.html#clearEnemies">clearEnemies</a></li><li><a href="global.html#hideGameOverScreens">hideGameOverScreens</a></li><li><a href="global.html#init">init</a></li><li><a href="global.html#loseSound">loseSound</a></li><li><a href="global.html#quitGame">quitGame</a></li><li><a href="global.html#redirectToBlank">redirectToBlank</a></li><li><a href="global.html#resetGame">resetGame</a></li><li><a href="global.html#resetGameState">resetGameState</a></li><li><a href="global.html#restartGame">restartGame</a></li><li><a href="global.html#restartGameOver">restartGameOver</a></li><li><a href="global.html#restartWorld">restartWorld</a></li><li><a href="global.html#setupTouchControls">setupTouchControls</a></li><li><a href="global.html#showInstructions">showInstructions</a></li><li><a href="global.html#startGame">startGame</a></li><li><a href="global.html#stopAllIntervals">stopAllIntervals</a></li><li><a href="global.html#stopAllSounds">stopAllSounds</a></li><li><a href="global.html#stopCharacterSounds">stopCharacterSounds</a></li><li><a href="global.html#stopEndbossSounds">stopEndbossSounds</a></li><li><a href="global.html#stopEnemySounds">stopEnemySounds</a></li><li><a href="global.html#stopGameSounds">stopGameSounds</a></li><li><a href="global.html#stopItemSounds">stopItemSounds</a></li><li><a href="global.html#stopSounds">stopSounds</a></li><li><a href="global.html#tryCloseWindow">tryCloseWindow</a></li><li><a href="global.html#winSound">winSound</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.4</a> on Sat Mar 01 2025 17:41:05 GMT+0100 (Mitteleuropäische Normalzeit)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: models/chicken.class.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: models/chicken.class.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * Represents an enemy Chicken character in the game.
+ * Inherits from MoveableObject and moves horizontally.
+ */
+class Chicken extends MoveableObject {
+    /** @type {number} Y position of the chicken */
+    y = 350;
+
+    /** @type {number} Height of the chicken */
+    height = 80;
+
+    /** @type {number} Width of the chicken */
+    width = 70;
+
+    /** @type {number} Number of hits before the chicken dies */
+    hitCount = 0;
+
+    /** @type {boolean} Indicates whether the chicken is dead */
+    isDead = false;
+
+    /** @type {string[]} Image paths for the walking animation */
+    IMAGES_WALKING = [
+        'img/3_enemies_chicken/chicken_normal/1_walk/1_w.png',
+        'img/3_enemies_chicken/chicken_normal/1_walk/2_w.png',
+        'img/3_enemies_chicken/chicken_normal/1_walk/3_w.png'
+    ];
+
+    /** @type {string[]} Image paths for the death animation */
+    IMAGES_DEAD = [
+        'img/3_enemies_chicken/chicken_normal/2_dead/dead.png',
+    ];
+
+    /**
+     * Creates a new Chicken instance with a random starting position and speed.
+     */
+    constructor() {
+        super();
+        this.walkingSound = new Audio('audio/chicken-normal.mp3');
+        this.deadSound = new Audio('audio/chicken-dead.mp3');
+        this.walkingSound.volume = 0.05;
+        this.loadImages(this.IMAGES_WALKING);
+        this.loadImages(this.IMAGES_DEAD);
+        this.x = 600 + Math.random() * 500 + Math.random() * 500;
+        this.speed = -0.15 - Math.random() * 0.2;
+        this.otherDirection = false;
+        const interval = setInterval(() => {
+            if (window.isGameStarted) {
+                this.animate();
+                clearInterval(interval);
+            }
+        }, 100);
+
+        if (window.soundManager) {
+            soundManager.registerEffect(this.walkingSound);
+            soundManager.registerEffect(this.deadSound);
+        } else {
+            console.error(" SoundManager nicht gefunden");
+        }
+
+    }
+
+    /**
+     * Kills the chicken (Enemies,Chicken and Smallchickew), stops movement, and plays the death sound.
+     */
+    die() {
+        this.isDead = true;
+        this.speed = 0;
+        this.stopWalkingSound();
+        this.deadSound.play();
+        this.playAnimation(this.IMAGES_DEAD);
+
+        setTimeout(() => {
+            this.removeFromWorld();
+        }, 1000);
+    }
+
+    /**
+     * Removes all the chicken (Enemies Chicken,Smallchicken) from the game world.
+     */
+    removeFromWorld() {
+        if (this.world &amp;&amp; this.world.level &amp;&amp; this.world.level.enemies) {
+            const index = this.world.level.enemies.indexOf(this);
+            if (index > -1) {
+                this.world.level.enemies.splice(index, 1);
+            }
+        }
+    }
+
+    /**
+     * Starts the movement and animation logic for the chicken.
+     */
+    animate() {
+        this.walkingInterval = setInterval(() => {
+            if (!window.isGameStarted || this.isDead) return;
+            this.x += this.otherDirection ? this.speed : this.speed;
+            this.checkBoundaries();
+            this.playWalkingSound();
+        }, 1000 / 60);
+
+        this.animationInterval = setInterval(() => {
+            if (!window.isGameStarted || this.isDead) return;
+            this.playAnimation(this.IMAGES_WALKING);
+        }, 50);
+    }
+
+    /**
+     * Checks if the chicken has reached the boundaries of the game world and changes direction.
+     */
+    checkBoundaries() {
+        if (!this.world || !this.world.canvas) return;
+
+        if (this.x &lt;= 0) {
+            this.otherDirection = true;
+            this.speed = Math.abs(this.speed);
+        }
+
+        if (this.x + this.width >= this.world.canvas.width) {
+            this.otherDirection = false;
+            this.speed = -Math.abs(this.speed);
+        }
+    }
+
+    /**
+     * Plays the walking sound if the chicken is not dead.
+     */
+    playWalkingSound() {
+        if (!this.walkingSound || this.isDead || !this.walkingSound.paused) return;
+
+        this.walkingSound.play().catch(() => { });
+    }
+
+
+
+    /**
+     * Stops the walking sound.
+     */
+    stopWalkingSound() {
+        if (this.walkingSound &amp;&amp; !this.walkingSound.paused) {
+            this.walkingSound.pause();
+            this.walkingSound.currentTime = 0;
+        }
+    }
+}
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="BackgroundObject.html">BackgroundObject</a></li><li><a href="BottleSplash.html">BottleSplash</a></li><li><a href="Character.html">Character</a></li><li><a href="Chicken.html">Chicken</a></li><li><a href="Cloud.html">Cloud</a></li><li><a href="Coin.html">Coin</a></li><li><a href="CoinStatusBar.html">CoinStatusBar</a></li><li><a href="CustomKeyboard.html">CustomKeyboard</a></li><li><a href="DrawableObject.html">DrawableObject</a></li><li><a href="Endboss.html">Endboss</a></li><li><a href="EndbossStatusBar.html">EndbossStatusBar</a></li><li><a href="Level.html">Level</a></li><li><a href="MoveableObject.html">MoveableObject</a></li><li><a href="SalsaBottle.html">SalsaBottle</a></li><li><a href="SalsaBottleStatusBar.html">SalsaBottleStatusBar</a></li><li><a href="SmallChicken.html">SmallChicken</a></li><li><a href="SoundManager.html">SoundManager</a></li><li><a href="StatusBar.html">StatusBar</a></li><li><a href="ThrowableObject.html">ThrowableObject</a></li><li><a href="World.html">World</a></li></ul><h3>Global</h3><ul><li><a href="global.html#checkForEnterScreen">checkForEnterScreen</a></li><li><a href="global.html#checkRotateWarning">checkRotateWarning</a></li><li><a href="global.html#clearEnemies">clearEnemies</a></li><li><a href="global.html#hideGameOverScreens">hideGameOverScreens</a></li><li><a href="global.html#init">init</a></li><li><a href="global.html#loseSound">loseSound</a></li><li><a href="global.html#quitGame">quitGame</a></li><li><a href="global.html#redirectToBlank">redirectToBlank</a></li><li><a href="global.html#resetGame">resetGame</a></li><li><a href="global.html#resetGameState">resetGameState</a></li><li><a href="global.html#restartGame">restartGame</a></li><li><a href="global.html#restartGameOver">restartGameOver</a></li><li><a href="global.html#restartWorld">restartWorld</a></li><li><a href="global.html#setupTouchControls">setupTouchControls</a></li><li><a href="global.html#showInstructions">showInstructions</a></li><li><a href="global.html#startGame">startGame</a></li><li><a href="global.html#stopAllIntervals">stopAllIntervals</a></li><li><a href="global.html#stopAllSounds">stopAllSounds</a></li><li><a href="global.html#stopCharacterSounds">stopCharacterSounds</a></li><li><a href="global.html#stopEndbossSounds">stopEndbossSounds</a></li><li><a href="global.html#stopEnemySounds">stopEnemySounds</a></li><li><a href="global.html#stopGameSounds">stopGameSounds</a></li><li><a href="global.html#stopItemSounds">stopItemSounds</a></li><li><a href="global.html#stopSounds">stopSounds</a></li><li><a href="global.html#tryCloseWindow">tryCloseWindow</a></li><li><a href="global.html#winSound">winSound</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.4</a> on Sat Mar 01 2025 17:41:05 GMT+0100 (Mitteleuropäische Normalzeit)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

@@ -1,0 +1,319 @@
+body {
+
+    margin: 0 !important;
+    background-color: aquamarine;
+    overflow: hidden;
+    display: grid;
+    justify-items: center;
+
+
+
+}
+
+@font-face {
+    font-family: 'Spanish Circus';
+    src: url('./fonts/Spanish Circus.otf') format('opentype');
+    filter: drop-shadow();
+}
+
+#content-wrapper {
+    height: 100vh;
+    max-width: 1920px;
+    width: 100%;
+    background-color: dimgray;
+    margin: 0 !important;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-sizing: border-box;
+    background: url('img/background-game.webp');
+    font-family: 'Spanish Circus', sans-serif;
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center;
+    filter: drop-shadow(0px 0px 4px black);
+
+}
+
+canvas {
+    background: url('img/background-game.webp');
+    background-size: cover;
+    height: auto;
+    background-repeat: no-repeat;
+    background-position: center;
+    display: block;
+    margin: auto;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1;
+
+}
+
+.controls {
+    display: none;
+    background-color: rgba(0, 0, 0, 0.8);
+    width: 100%;
+    height: 170px;
+    justify-content: center;
+    align-items: center;
+    top: 0;
+    position: fixed;
+    left: 50%;
+    transform: translateX(-50%);
+    gap: 15px;
+    z-index: 9999;
+    pointer-events: auto;
+}
+
+
+#touch-controls {
+    display: none;
+    position: fixed;
+    bottom: 0px;
+    background-color: rgba(0, 0, 0, 0.8);
+    width: 100%;
+    height: 170px;
+    justify-content: space-between;
+    align-items: center;
+    left: 50%;
+    transform: translateX(-50%);
+    gap: 10px;
+    z-index: 9999;
+    pointer-events: auto;
+}
+
+#position-right {
+    gap: 8px;
+    margin-right: 12px;
+    display: flex;
+
+}
+
+#position-left {
+    gap: 8px;
+    margin-left: 12px;
+    display: flex;
+
+}
+
+
+.controls button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 70px;
+    height: 70px;
+    font-size: 10px;
+    text-align: center;
+    border: none;
+    border-radius: 50%;
+    background-color: #FFF8C1;
+    filter: drop-shadow(0px 0px 2px black);
+    color: white;
+    cursor: pointer;
+    font-family: 'Arial', sans-serif;
+}
+
+#touch-controls button img {
+
+    width: 50%;
+    height: 50%;
+    object-fit: contain;
+    display: block;
+
+}
+
+#position-left,
+#positon-right {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#touch-controls button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 70px;
+    height: 70px;
+    font-size: 40px;
+    text-align: center;
+    border: none;
+    border-radius: 50%;
+    background-color: #FFF8C1;
+    filter: drop-shadow(0px 0px 2px black);
+    color: white;
+    cursor: pointer;
+    font-family: 'Arial', sans-serif;
+
+
+}
+
+#fullscreen-toggle img,
+#exit-fullscreen img,
+#settings-button img {
+    width: 50%;
+    height: 50%;
+    object-fit: contain;
+    display: block;
+}
+
+.controls button:active,
+#show-control-buttons,
+#touch-controls button:active {
+    background-color: #FFAD00;
+}
+
+#show-control-buttons {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    bottom: 100px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 70px;
+    height: 70px;
+    font-size: 40px;
+    text-align: center;
+    border: none;
+    border-radius: 50%;
+    background-color: burlywood;
+    color: white;
+    cursor: pointer;
+    font-family: 'Arial', sans-serif;
+    z-index: 99999;
+
+}
+
+#show-control-buttons img {
+    width: 50%;
+    height: 50%;
+    object-fit: contain;
+    display: block;
+}
+
+
+#overlay-handle {
+    display: none;
+    border-style: solid;
+    border-color: white;
+    right: 0;
+    position: fixed;
+    height: 100px;
+    border-radius: 20px 0px 0px 20px;
+    font-size: 14px;
+    align-items: center;
+    justify-content: center;
+    /* right: 0; */
+    /* transform: translateY(-50%); */
+    background-color: #333;
+    color: white;
+    padding: 10px;
+    cursor: pointer;
+    z-index: 10000;
+    /* transition: opacity 0.3s ease-in-out;  */
+}
+
+
+#show-control-buttons {
+    position: fixed;
+    top: 50%;
+    right: 0;
+    transform: translateX(50px) scale(0) rotate(180deg);
+    background-color: #444;
+    padding: 10px;
+    border-radius: 10px 0 0 10px;
+    cursor: pointer;
+    z-index: 10001;
+    transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.3s ease-in-out;
+    opacity: 0;
+}
+
+
+#show-control-buttons.active {
+    transform: translateX(-10px) scale(1) rotate(0deg);
+    opacity: 1;
+    border-style: solid;
+    border-color: darkorange;
+}
+
+#rotate-warning {
+    width: 100%;
+    margin: auto;
+    display: none;
+    justify-content: center;
+    align-items: center;
+    background-color: red;
+    height: 100vh;
+    z-index: 999999;
+    position: fixed;
+}
+
+#rotate-warning img {
+    height: 200px;
+    width: auto;
+    animation: rotatePhone 2s infinite linear;
+}
+
+@keyframes rotatePhone {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(-63deg);
+    }
+}
+
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 60px;
+    height: 34px;
+
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    display: none;
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #333333;
+    filter: drop-shadow(0px 0px 1px black);
+    transition: 0.4s;
+    border-radius: 34px;
+    z-index: 10000;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 26px;
+    width: 26px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: 0.4s;
+    border-radius: 50%;
+}
+
+input:checked+.slider {
+    background-color: #ffae00;
+
+}
+
+input:checked+.slider:before {
+    transform: translateX(26px);
+}

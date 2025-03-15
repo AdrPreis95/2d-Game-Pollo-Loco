@@ -1,0 +1,16 @@
+{
+  "name": "el-pollo-loco",
+  "version": "1.0.0",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "electron": "^34.0.1",
+    "jsdoc": "^4.0.4"
+  }
+}
