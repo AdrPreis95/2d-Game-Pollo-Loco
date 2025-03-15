@@ -1,0 +1,9 @@
+echo "node_modules/
+dist/
+electron/
+*.log
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/" > .gitignore
+cat .gitignore
