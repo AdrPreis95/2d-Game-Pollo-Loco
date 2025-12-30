@@ -401,7 +401,7 @@ class Character extends MoveableObject {
         if (this.movementInterval) clearInterval(this.movementInterval);
     }
 
-    /*** Triggers the character's death animation and handles game over logic. */
+    /*** Triggers the character's death animation and handles game over logic... */
     triggerDeathAnimation() {
         this.playAnimation(this.IMAGES_DEAD);
         if (this.dieCharacterSound) {
