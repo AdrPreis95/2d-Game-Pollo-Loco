@@ -10,7 +10,7 @@ class SmallChicken extends Chicken {
         this.height = 50;
         this.width = 50;
         this.y = 360;
-        this.x = this.getValidXPosition(800, 2400, 100); // Mindestabstand 100 Pixel
+        this.x = this.getValidXPosition(800, 2400, 100);
         this.speed = -0.1 - Math.random() * 0.1;
         this.otherDirection = false;
 
@@ -26,12 +26,5 @@ class SmallChicken extends Chicken {
 
         this.loadImages(this.IMAGES_WALKING);
         this.loadImages(this.IMAGES_DEAD);
-
-        const interval = setInterval(() => {
-            if (window.isGameStarted) {
-                this.animate();
-                clearInterval(interval);
-            }
-        }, 100);
     }
 }

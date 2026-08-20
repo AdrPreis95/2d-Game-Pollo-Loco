@@ -1,93 +1,60 @@
 /**
- * Stops all sounds in the game, including character, enemies, collectibles, and game event sounds.
+ * Stops all gameplay sounds through the central sound manager.
  */
 function stopAllSounds() {
-    if (!world) return;
-    stopCharacterSounds();
-    stopEnemySounds();
-    stopEndbossSounds();
-    stopItemSounds();
-    stopGameSounds();
+    if (window.soundManager) {
+        window.soundManager.resetGameAudio();
+    }
+    stopStandaloneSounds();
 }
 
 /**
- * Stops all character-related sounds.
+ * Stops win/lose and leftover entity sounds that may not be registered yet.
  */
-function stopCharacterSounds() {
-    let characterSounds = [
-        world.character.walking_sound,
-        world.character.jumpSound,
-        world.character.hitCharacterSound,
-        world.character.dieCharacterSound,
-        world.character.sleepSound,
-        world.character.attackSound,
-        world.character.hurtSound,
-        world.character.alertSound
+function stopStandaloneSounds() {
+    const sounds = [
+        typeof winSound !== 'undefined' ? winSound : null,
+        typeof loseSound !== 'undefined' ? loseSound : null
     ];
-    stopSounds(characterSounds);
-}
-
-/**
- * Stops all enemy-related sounds.
- */
-function stopEnemySounds() {
-    if (!world.level?.enemies) return;
-    world.level.enemies.forEach(enemy => {
-        let enemySounds = [enemy.walkingSound, enemy.deadSound, enemy.chickenSound, enemy.deathSound];
-        stopSounds(enemySounds);
-    });
-}
-
-/**
- * Stops all endboss-related sounds.
- */
-function stopEndbossSounds() {
-    if (!world.endboss) return;
-    let endbossSounds = [
-        world.endboss.endbossSound,
-        world.endboss.alertSound,
-        world.endboss.hurtSound,
-        world.endboss.attackSound
-    ];
-    stopSounds(endbossSounds);
-}
-
-/**
- * Stops all item-related sounds.
- */
-function stopItemSounds() {
-    let itemSounds = [world.coinSound, world.bottleSound, world.splashBottleSound];
-    stopSounds(itemSounds);
-}
-
-/**
- * Stops all general game-related sounds.
- */
-function stopGameSounds() {
-    let gameSounds = [world.winSound, world.loseSound];
-    stopSounds(gameSounds);
-}
-
-/**
- * Pauses and resets all sounds in an array.
- * @param {HTMLAudioElement[]} sounds - Array of sounds to stop.
- */
-function stopSounds(sounds) {
-    sounds.forEach(sound => {
-        if (sound) {
-            sound.pause();
+    if (window.world) {
+        sounds.push(
+            window.world.coinSound,
+            window.world.bottleSound,
+            window.world.splashBottleSound,
+            window.world.dieCharacterSound,
+            window.world.character?.walking_sound,
+            window.world.character?.jumpSound,
+            window.world.character?.hitCharacterSound,
+            window.world.character?.dieCharacterSound,
+            window.world.character?.sleepSound,
+            window.world.endboss?.alertSound,
+            window.world.endboss?.attackSound,
+            window.world.endboss?.hurtSound,
+            window.world.endboss?.dieSound
+        );
+        window.world.level?.enemies?.forEach((enemy) => {
+            sounds.push(enemy.walkingSound, enemy.deadSound);
+        });
+    }
+    sounds.forEach((sound) => {
+        if (!sound) return;
+        sound.pause();
+        try {
             sound.currentTime = 0;
-        }
+        } catch (error) { }
+        sound.loop = false;
     });
 }
 
 /**
- * Stops all active intervals in the game.
+ * Stops all active intervals and animation frames in the game.
  */
 function stopAllIntervals() {
-    if (world?.intervals) {
-        world.intervals.forEach(clearInterval);
-        world.intervals = [];
+    if (window.world) {
+        window.world.stop();
+    }
+    if (window.gameTimers) {
+        window.gameTimers.clearAll();
     }
 }
 
@@ -98,33 +65,20 @@ function resetGame() {
     hideGameOverScreens();
     stopAllSounds();
     stopAllIntervals();
-    clearEnemies();
-    restartWorld();
+    window.currentEndboss = null;
+    window.isGameStarted = false;
+    initLevel();
+    const canvas = document.getElementById('canvas');
+    window.world = new World(canvas, window.keyboard);
+    window.isGameStarted = true;
 }
 
 /**
  * Hides game over and win screen overlays.
  */
 function hideGameOverScreens() {
-    document.getElementById('gameover_overlay').style.display = 'none';
-    document.getElementById('winscreen_overlay').style.display = 'none';
-}
-
-/**
- * Clears all enemies from the world.
- */
-function clearEnemies() {
-    if (!world?.level?.enemies) return;
-    world.level.enemies.forEach(enemy => enemy.isDead = true);
-    world.level.enemies = [];
-}
-
-/**
- * Reinitializes the game world.
- */
-function restartWorld() {
-    world = null;
-    initLevel();
-    world = new World(canvas, keyboard);
-    isGameStarted = true;
+    const gameOverOverlay = document.getElementById('gameover_overlay');
+    const winOverlay = document.getElementById('winscreen_overlay');
+    if (gameOverOverlay) gameOverOverlay.style.display = 'none';
+    if (winOverlay) winOverlay.style.display = 'none';
 }

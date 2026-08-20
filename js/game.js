@@ -1,110 +1,63 @@
 import { startGame, isGameStarted } from './gamestate.js';
-window.character = null;
-let canvas, world;
+
 window.keyboard = new CustomKeyboard();
 
 /**
- * Initializes the game if it has been started.
+ * Creates the game world and binds touch controls.
  */
 function init() {
-    if (!isGameStarted) {
-        console.warn('The game has not been started yet!');
-        return;
-    }
-    canvas = document.getElementById('canvas');
-    window.world = new World(canvas, keyboard);
-
+    if (!isGameStarted && !window.isGameStarted) return;
+    const canvas = document.getElementById('canvas');
+    window.world = new window.World(canvas, window.keyboard);
     setupTouchControls();
-
 }
 
-/**
- * Starts the game when the play button is clicked.
- */
-document.getElementById('play-icon').addEventListener('click', () => {
+window.initGame = function () {
     startGame();
+    window.isGameStarted = true;
     init();
+};
 
+window.addEventListener('keydown', (event) => {
+    if (event.key === 'ArrowRight') window.keyboard.RIGHT = true;
+    if (event.key === 'ArrowLeft') window.keyboard.LEFT = true;
+    if (event.key === ' ') {
+        event.preventDefault();
+        window.keyboard.SPACE = true;
+    }
+    if (event.key === 'f' || event.key === 'F') window.keyboard.F = true;
+});
+
+window.addEventListener('keyup', (event) => {
+    if (event.key === 'ArrowRight') window.keyboard.RIGHT = false;
+    if (event.key === 'ArrowLeft') window.keyboard.LEFT = false;
+    if (event.key === ' ') window.keyboard.SPACE = false;
+    if (event.key === 'f' || event.key === 'F') window.keyboard.F = false;
 });
 
 /**
- * Event listener for key press events.
- */
-window.addEventListener("keydown", (event) => {
-    if (event.keyCode === 39) keyboard.RIGHT = true;
-    if (event.keyCode === 37) keyboard.LEFT = true;
-    if (event.keyCode === 32) keyboard.SPACE = true;
-    if (event.keyCode === 70) keyboard.F = true;
-});
-
-/**
- * Event listener for key release events.
- */
-window.addEventListener("keyup", (event) => {
-    if (event.keyCode === 39) keyboard.RIGHT = false;
-    if (event.keyCode === 37) keyboard.LEFT = false;
-    if (event.keyCode === 32) keyboard.SPACE = false;
-    if (event.keyCode === 70) keyboard.F = false;
-});
-
-/**
- * Setup touch controls for mobile devices.
+ * Maps on-screen buttons to the same keyboard flags used on desktop.
  */
 function setupTouchControls() {
-    const btnLeft = document.getElementById("btn-left");
-    const btnRight = document.getElementById("btn-right");
-    const btnJump = document.getElementById("btn-jump");
-    const btnThrow = document.getElementById("btn-throw");
+    const buttons = [
+        { id: 'btn-left', key: 'LEFT' },
+        { id: 'btn-right', key: 'RIGHT' },
+        { id: 'btn-jump', key: 'SPACE' },
+        { id: 'btn-throw', key: 'F' }
+    ];
+    const first = document.getElementById('btn-left');
+    if (!first || first.dataset.bound === 'true') return;
+    first.dataset.bound = 'true';
 
-    if (!btnLeft || !btnRight || !btnJump || !btnThrow) {
-        console.error("  Touch-Button wurde nicht gefunden");
-        return;
-    }
-
-    btnLeft.addEventListener("touchstart", (e) => {
-        e.preventDefault();
-        keyboard.LEFT = true;
-    }, { passive: false });
-
-    btnLeft.addEventListener("touchend", () => {
-        keyboard.LEFT = false;
-
-    });
-
-    btnRight.addEventListener("touchstart", (e) => {
-        e.preventDefault();
-        keyboard.RIGHT = true;
-    }, { passive: false });
-
-    btnRight.addEventListener("touchend", () => {
-        keyboard.RIGHT = false;
-    });
-
-    btnJump.addEventListener("touchstart", (e) => {
-        e.preventDefault();
-        console.log("✅ Touch erkannt!");
-    
-        if (!window.world || !window.world.character) {
-            console.error(" Kein Charakter gefunden! Setze neuen Charakter...");
-            window.world.character = new Character(); // Neuer Charakter
-        }
-    
-        console.log("Touch-Sprung = SPACE-Sprung!");
-        keyboard.SPACE = true;
-        setTimeout(() => keyboard.SPACE = false, 150);
-    });
-    
-
-    btnThrow.addEventListener("touchstart", (e) => {
-        e.preventDefault();
-        keyboard.F = true;
-        setTimeout(() => keyboard.F = false, 150);
+    buttons.forEach(({ id, key }) => {
+        const button = document.getElementById(id);
+        if (!button) return;
+        button.addEventListener('touchstart', (event) => {
+            event.preventDefault();
+            window.keyboard[key] = true;
+        }, { passive: false });
+        button.addEventListener('touchend', () => {
+            window.keyboard[key] = false;
+        });
     });
 }
-
-/**
- * Debugging: Prüfen, ob `keyboard`-Eingaben funktionieren.
- */
-setInterval(() => {
-
-}, 2000);

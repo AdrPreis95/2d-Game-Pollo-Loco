@@ -93,33 +93,22 @@ class Endboss extends MoveableObject {
         this.loadImages(this.IMAGES_HURT);
         this.loadImages(this.IMAGES_DEAD);
         this.x = 2500;
+        window.currentEndboss = this;
 
-        if (!window.currentEndboss) {
-            window.currentEndboss = this;
-
-        }
-        if (!this.soundsRegistered) {
-            window.soundManager.registerEffect(this.alertSound);
+        if (window.soundManager) {
+            this.alertSound.loop = true;
+            window.soundManager.registerEffect(this.alertSound, { loop: true });
             window.soundManager.registerEffect(this.attackSound);
             window.soundManager.registerEffect(this.hurtSound);
             window.soundManager.registerEffect(this.dieSound);
-            this.soundsRegistered = true;
         }
 
         this.animate();
-
-
-
-
-
     }
+
     updateSoundVolumes() {
-        if (!window.soundManager) {
-            return;
-        }
-
-        let volume = window.soundManager.effectsVolume;
-
+        if (!window.soundManager) return;
+        const volume = window.soundManager.effectsVolume;
         this.alertSound.volume = volume;
         this.attackSound.volume = volume;
         this.hurtSound.volume = volume;
@@ -127,23 +116,35 @@ class Endboss extends MoveableObject {
     }
 
     /**
-         * Plays the alert sound of the Endboss.
-         */
+     * Plays the alert sound of the Endboss as a loop while in range.
+     */
     playAlertSound() {
-        if (!isGameStarted || this.isDead || !this.alertSound.paused) return;
+        if (!window.isGameStarted || this.isDead || this.world?.isStopped) {
+            this.stopAlertSound();
+            return;
+        }
         this.updateSoundVolumes();
-        this.alertSound.play().catch((error) => {
-            console.error('Error playing alert sound:', error);
-        });
+        this.alertSound.loop = true;
+        if (this.alertSound.paused) {
+            this.alertSound.play().catch(() => {});
+        }
     }
 
+    stopAlertSound() {
+        if (!this.alertSound || this.alertSound.paused) return;
+        this.alertSound.pause();
+        this.alertSound.currentTime = 0;
+    }
 
     /**
      * Starts the animation logic of the Endboss.
      */
     animate() {
-        setInterval(() => {
-            if (!isGameStarted) return;
+        this.movementInterval = gameTimers.setInterval(() => {
+            if (!window.isGameStarted || this.world?.isStopped) {
+                this.stopAlertSound();
+                return;
+            }
             this.handleMovement();
         }, 50);
     }
@@ -152,22 +153,18 @@ class Endboss extends MoveableObject {
      * Controls the movement of the Endboss depending on the player's position.
      */
     handleMovement() {
-        if (!isGameStarted || this.isDead || this.isHurt) return;
+        if (!window.isGameStarted || this.isDead || this.isHurt) return;
         if (!this.world || !this.world.character) return;
         const distanceToCharacter = Math.abs(this.world.character.x - this.x);
         if (distanceToCharacter < 500 && distanceToCharacter > 100) {
-            if (!this.isAlerting) {
-                this.playAlertSound();
-                this.isAlerting = true;
-            }
+            this.playAlertSound();
             this.playAnimation(this.IMAGES_WALKING);
             this.x += this.world.character.x < this.x ? -3 : 3;
         } else if (distanceToCharacter <= 100) {
+            this.stopAlertSound();
             this.attack();
         } else {
-            this.isAlerting = false;
-            this.alertSound.pause();
-            this.alertSound.currentTime = 0;
+            this.stopAlertSound();
             this.playAnimation(this.IMAGES_ALERT);
         }
     }
@@ -176,33 +173,30 @@ class Endboss extends MoveableObject {
      * Makes the Endboss perform an attack.
      */
     attack() {
-        if (!isGameStarted || this.isAttacking) return;
+        if (!window.isGameStarted || this.isAttacking || this.isDead) return;
         this.isAttacking = true;
         this.updateSoundVolumes();
-        this.attackSound.play().catch((error) => {
-            console.error('Error playing attack sound:', error);
-        });
+        this.attackSound.currentTime = 0;
+        this.attackSound.play().catch(() => {});
         this.playAnimation(this.IMAGES_ATTACK);
         if (this.world.character && Math.abs(this.world.character.x - this.x) < 100) {
             this.world.character.hit();
             this.world.statusBar.setPercentage(this.world.character.energy);
         }
-        setTimeout(() => {
+        this.attackTimeout = gameTimers.setTimeout(() => {
             this.isAttacking = false;
         }, 1000);
     }
-
 
     /**
      * Reduces the health of the Endboss when hit.
      */
     hit() {
-        if (!isGameStarted || this.isDead) return;
+        if (!window.isGameStarted || this.isDead) return;
         this.energy -= 20;
         this.updateSoundVolumes();
-        this.hurtSound.play().catch((error) => {
-            console.error('Error playing hurt sound:', error);
-        });
+        this.hurtSound.currentTime = 0;
+        this.hurtSound.play().catch(() => {});
         if (this.world) {
             this.world.endbossStatusBar.setPercentage(this.energy);
         }
@@ -214,45 +208,49 @@ class Endboss extends MoveableObject {
     }
 
     /**
-     * This function handles Endboss Death , stops and remove enemies,sounds, animations and shows th ewinscreen
+     * Handles the endboss death sequence.
      */
-    /**
-  * Handles the character's death sequence.
-  */
     die() {
+        if (this.isDeathHandled) return;
+        this.isDeathHandled = true;
         this.isDead = true;
+        this.stopAlertSound();
         this.stopCharacterActions();
         this.playDeathSound();
         this.playAnimation(this.IMAGES_DEAD);
 
-        setTimeout(() => {
-            isGameStarted = false;
+        this.winTimeout = gameTimers.setTimeout(() => {
+            window.isGameStarted = false;
             this.removeEnemyFromWorld();
+            this.world?.character?.stopWalkingSound?.();
+            this.world?.level?.enemies?.forEach((enemy) => enemy.stopWalkingSound?.());
+            if (this.world) this.world.stop();
+            if (window.gameTimers) gameTimers.clearAll();
             this.playWinSound();
             this.showWinScreen();
         }, 2000);
     }
 
     /**
-     * Stops all sounds and animations related to the character.
+     * Stops looping sounds related to the endboss fight.
      */
     stopCharacterActions() {
-        if (this.world?.character) this.world.character.stopLongIdleAnimation();
-        stopAllSounds();
-        if (this.alertSound) {
-            this.alertSound.pause();
-            this.alertSound.currentTime = 0;
+        if (this.world?.character) this.world.character.stopWalkingSound();
+        this.stopAlertSound();
+        if (this.attackSound) {
+            this.attackSound.pause();
+            this.attackSound.currentTime = 0;
         }
     }
 
     /**
-     * Plays the character's death sound.
+     * Plays the endboss death sound.
      */
     playDeathSound() {
         this.updateSoundVolumes();
-        this.dieSound.play().catch(error => console.error('Error playing death sound:', error));
+        this.dieSound.currentTime = 0;
+        this.dieSound.play().catch(() => {});
     }
-
 
     /**
      * Removes the enemy from the world after death.
@@ -267,13 +265,11 @@ class Endboss extends MoveableObject {
      * Plays the win sound if available.
      */
     playWinSound() {
-        if (winSound) {
-            winSound.volume = 0.1;
-            winSound.currentTime = 0;
-            winSound.play().catch(error => console.error("Error playing win sound:", error));
-        } else {
-            console.error("Win sound not found!");
-        }
+        if (!winSound) return;
+        winSound.loop = false;
+        winSound.volume = window.soundManager ? window.soundManager.musicVolume : 0.1;
+        winSound.currentTime = 0;
+        winSound.play().catch(() => {});
     }
 
     /**
@@ -283,12 +279,6 @@ class Endboss extends MoveableObject {
         const winScreenOverlay = document.getElementById("winscreen_overlay");
         if (winScreenOverlay) {
             winScreenOverlay.style.display = "flex";
-        } else {
-            console.error("Win screen overlay not found");
         }
     }
 }
-
-
-
-

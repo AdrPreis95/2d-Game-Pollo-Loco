@@ -20,7 +20,7 @@ class Cloud extends MoveableObject {
      */
     constructor() {
         super().loadImage('img/5_background/layers/4_clouds/1.png');
-        this.x = Math.random() * canvas.width + canvas.width;
+        this.x = Math.random() * 720 + 720;
         this.startMoving();
     }
 
@@ -28,10 +28,12 @@ class Cloud extends MoveableObject {
      * Starts the movement of the cloud to the left.
      */
     startMoving() {
-        setInterval(() => {
+        this.moveInterval = gameTimers.setInterval(() => {
+            if (!window.isGameStarted || window.world?.isStopped) return;
             this.x -= this.speedX;
+            const canvasWidth = window.world?.canvas?.width || 720;
             if (this.x < -this.width) {
-                this.x = canvas.width + Math.random() * 100;
+                this.x = canvasWidth + Math.random() * 100;
             }
         }, 1000 / 60);
     }

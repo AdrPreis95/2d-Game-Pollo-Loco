@@ -35,12 +35,16 @@ class ThrowableObject extends MoveableObject {
         this.speedY = 30;
         this.applyGravity();
 
-        const rotationInterval = setInterval(() => {
+        this.rotationInterval = gameTimers.setInterval(() => {
+            if (this.world?.isStopped) {
+                gameTimers.clearInterval(this.rotationInterval);
+                return;
+            }
             this.playAnimation(this.ROTATION_IMAGES);
             this.x += 10;
 
             if (this.y > 450 || this.hasCollidedWithTarget()) {
-                clearInterval(rotationInterval);
+                gameTimers.clearInterval(this.rotationInterval);
                 this.createSplash();
             }
         }, 50);

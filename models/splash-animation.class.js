@@ -35,11 +35,15 @@ class BottleSplash extends DrawableObject {
      */
     playSplashAnimation() {
         let i = 0;
-        const interval = setInterval(() => {
+        this.splashInterval = gameTimers.setInterval(() => {
+            if (this.world?.isStopped) {
+                gameTimers.clearInterval(this.splashInterval);
+                return;
+            }
             this.img = this.imageCache[this.IMAGES_SPLASH[i]];
             i++;
             if (i >= this.IMAGES_SPLASH.length) {
-                clearInterval(interval);
+                gameTimers.clearInterval(this.splashInterval);
                 this.world.removeObject(this);
             }
         }, 100);

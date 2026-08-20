@@ -23,55 +23,70 @@ class Chicken extends MoveableObject {
         super();
         this.walkingSound = new Audio('audio/chicken-normal.mp3');
         this.deadSound = new Audio('audio/chicken-dead.mp3');
-        this.walkingSound.volume = 0.05;
+        this.walkingSound.loop = true;
         this.loadImages(this.IMAGES_WALKING);
         this.loadImages(this.IMAGES_DEAD);
 
-        // Generiere eine gültige X-Position mit Mindestabstand zu anderen Hühnern
         this.x = this.getValidXPosition(600, 1600, 100);
         this.speed = -0.15 - Math.random() * 0.2;
         this.otherDirection = false;
+        this.hasStartedAnimating = false;
 
-        const interval = setInterval(() => {
-            if (window.isGameStarted) {
-                this.animate();
-                clearInterval(interval);
-            }
-        }, 100);
+        this.startWhenGameReady();
 
         if (window.soundManager) {
-            soundManager.registerEffect(this.walkingSound);
+            soundManager.registerEffect(this.walkingSound, { loop: true });
             soundManager.registerEffect(this.deadSound);
-        } else {
-            console.error("SoundManager nicht gefunden");
         }
+    }
+
+    /**
+     * Waits until the game has started, then starts movement once.
+     */
+    startWhenGameReady() {
+        if (window.isGameStarted) {
+            this.animate();
+            return;
+        }
+        this.startInterval = gameTimers.setInterval(() => {
+            if (window.isGameStarted && !this.hasStartedAnimating) {
+                this.animate();
+                gameTimers.clearInterval(this.startInterval);
+            }
+        }, 100);
     }
 
     /**
      * generates a space between every chicken.
      */
     getValidXPosition(min, max, minDistance) {
-        let x, isTooClose;
+        let x;
+        let isTooClose;
         do {
             x = min + Math.random() * (max - min);
             isTooClose = this.world?.level?.enemies?.some(enemy => Math.abs(enemy.x - x) < minDistance);
-        } while (isTooClose); 
+        } while (isTooClose);
         return x;
     }
 
     die() {
+        if (this.isDead) return;
         this.isDead = true;
         this.speed = 0;
         this.stopWalkingSound();
-        this.deadSound.play();
+        this.deadSound.currentTime = 0;
+        this.deadSound.play().catch(() => {});
         this.playAnimation(this.IMAGES_DEAD);
 
-        setTimeout(() => {
+        this.removeTimeout = gameTimers.setTimeout(() => {
             this.removeFromWorld();
         }, 1000);
     }
 
     removeFromWorld() {
+        this.stopWalkingSound();
+        if (this.walkingInterval) gameTimers.clearInterval(this.walkingInterval);
+        if (this.animationInterval) gameTimers.clearInterval(this.animationInterval);
         if (this.world && this.world.level && this.world.level.enemies) {
             const index = this.world.level.enemies.indexOf(this);
             if (index > -1) {
@@ -81,42 +96,75 @@ class Chicken extends MoveableObject {
     }
 
     animate() {
-        this.walkingInterval = setInterval(() => {
-            if (!window.isGameStarted || this.isDead) return;
-            this.x += this.otherDirection ? this.speed : this.speed;
+        if (this.hasStartedAnimating) return;
+        this.hasStartedAnimating = true;
+
+        this.walkingInterval = gameTimers.setInterval(() => {
+            if (!window.isGameStarted || this.world?.isStopped || this.isDead) {
+                this.stopWalkingSound();
+                return;
+            }
+            this.x += this.speed;
             this.checkBoundaries();
             this.playWalkingSound();
         }, 1000 / 60);
 
-        this.animationInterval = setInterval(() => {
-            if (!window.isGameStarted || this.isDead) return;
+        this.animationInterval = gameTimers.setInterval(() => {
+            if (!window.isGameStarted || this.world?.isStopped || this.isDead) return;
             this.playAnimation(this.IMAGES_WALKING);
         }, 50);
     }
 
     checkBoundaries() {
-        if (!this.world || !this.world.canvas) return;
+        const minX = 0;
+        const maxX = this.world?.level?.level_end_x || 2200;
 
-        if (this.x <= 0) {
+        if (this.x <= minX) {
             this.otherDirection = true;
             this.speed = Math.abs(this.speed);
         }
 
-        if (this.x + this.width >= this.world.canvas.width) {
+        if (this.x + this.width >= maxX) {
             this.otherDirection = false;
             this.speed = -Math.abs(this.speed);
         }
     }
 
     playWalkingSound() {
-        if (!this.walkingSound || this.isDead || !this.walkingSound.paused) return;
-        this.walkingSound.play().catch(() => { });
+        if (!this.walkingSound || this.isDead || !window.isGameStarted || this.world?.isStopped) {
+            this.stopWalkingSound();
+            return;
+        }
+
+        const character = this.world?.character;
+        if (!character) return;
+
+        const distance = Math.abs(character.x - this.x);
+        if (distance > 450) {
+            this.stopWalkingSound();
+            return;
+        }
+
+        const hasNearerChicken = this.world.level?.enemies?.some((enemy) =>
+            enemy instanceof Chicken &&
+            !enemy.isDead &&
+            enemy !== this &&
+            Math.abs(character.x - enemy.x) < distance
+        );
+        if (hasNearerChicken) {
+            this.stopWalkingSound();
+            return;
+        }
+
+        this.walkingSound.loop = true;
+        if (this.walkingSound.paused) {
+            this.walkingSound.play().catch(() => {});
+        }
     }
 
     stopWalkingSound() {
-        if (this.walkingSound && !this.walkingSound.paused) {
-            this.walkingSound.pause();
-            this.walkingSound.currentTime = 0;
-        }
+        if (!this.walkingSound || this.walkingSound.paused) return;
+        this.walkingSound.pause();
+        this.walkingSound.currentTime = 0;
     }
 }

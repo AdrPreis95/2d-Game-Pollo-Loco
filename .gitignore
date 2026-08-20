@@ -1,9 +1,10 @@
-echo "node_modules/
+node_modules/
 dist/
 electron/
+docs/
+out/
 *.log
 .DS_Store
 Thumbs.db
 .vscode/
-.idea/" > .gitignore
-cat .gitignore
+.idea/

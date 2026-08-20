@@ -1,14 +1,20 @@
 {
   "name": "el-pollo-loco",
   "version": "1.0.0",
-  "main": "main.js",
+  "description": "Object-oriented 2D jump-and-run game built with vanilla JavaScript and HTML Canvas.",
+  "main": "index.html",
   "scripts": {
-    "start": "electron ."
+    "start": "npx --yes serve .",
+    "electron": "electron ."
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "javascript",
+    "canvas",
+    "game",
+    "oop"
+  ],
+  "author": "Adrian Preis",
   "license": "ISC",
-  "description": "",
   "devDependencies": {
     "electron": "^34.0.1",
     "jsdoc": "^4.0.4"

@@ -5,8 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>El Pollo Loco</title>
+    <meta name="description" content="2D jump-and-run game built with vanilla JavaScript and HTML Canvas.">
     <link rel="icon" href="img/9_intro_outro_screens/start/startscreen_1.png">
-    <link rel="icon" href="data:,">
 
 
     <link rel="stylesheet" href="style.css">
@@ -20,6 +20,7 @@
     <link rel="stylesheet" href="styles/tutorial.css">
 
     <script src="js/sound-manager.js" defer></script>
+    <script src="js/game-timers.js" defer></script>
     <script type="module" src="js/gamestate.js" defer></script>
 
     <script src="models/drawable-object.class.js" defer></script>
@@ -53,7 +54,7 @@
 
 </head>
 
-<body onload="init()">
+<body>
     <div id="content-wrapper">
         <div id="enter_screen">
             <h2>Start Your Adventure Click or Press Enter</h2>
@@ -137,7 +138,7 @@
         <div class="overlay" id="imprintoverlay">
             <div class="overlay-content">
                 <h2>Imprint</h2>
-                <p><strong>Name-</strong> Adrian Preis</p>
+                <p><strong>Name:</strong> Adrian Preis</p>
                 <p><strong>Address:</strong> Germany, Rhineland-Palatinate</p>
                 <p><strong>Contact:</strong> Email: adriantest@deinspiel.de</p>
                 <p><strong>Responsible for content:</strong> Adrian Preis</p>

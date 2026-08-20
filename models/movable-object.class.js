@@ -13,7 +13,8 @@ class MoveableObject extends DrawableObject {
      * Applies gravity to the object, making it fall if above the ground.
      */
     applyGravity() {
-        setInterval(() => {
+        this.gravityInterval = gameTimers.setInterval(() => {
+            if (this.world?.isStopped) return;
             if (!this.isAboveGround() && this.speedY <= 0) {
                 this.speedY = 0;
                 this.isJumpingUp = false;

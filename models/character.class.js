@@ -93,8 +93,6 @@ class Character extends MoveableObject {
     hitCharacterSound = new Audio('audio/hit-chracter.mp3');
     /** @type {HTMLAudioElement} Audio element for character death sound effect. */
     dieCharacterSound = new Audio('audio/die-character.mp3');
-    /** @type {HTMLAudioElement} Audio element for sleep effect. */
-    // sleepSound = new Audio('audio/sleep-character.mp3');
 
     /** * Initializes the character, loads images, applies gravity, and starts animations. */
     constructor() {
@@ -105,16 +103,14 @@ class Character extends MoveableObject {
         this.loadImages(this.IMAGES_JUMPING);
         this.loadImages(this.IMAGES_DEAD);
         this.loadImages(this.IMAGES_HURT);
+        this.walking_sound.loop = true;
         this.applyGravity();
         this.animate();
         if (window.soundManager) {
-            soundManager.registerEffect(this.walking_sound);
+            soundManager.registerEffect(this.walking_sound, { loop: true });
             soundManager.registerEffect(this.jumpSound);
             soundManager.registerEffect(this.hitCharacterSound);
             soundManager.registerEffect(this.dieCharacterSound);
-            soundManager.registerEffect(this.sleepSound);
-        } else {
-            console.error("SoundManager fehler");
         }
     }
 
@@ -127,8 +123,8 @@ class Character extends MoveableObject {
 
     /*** Starts the interval for checking character movement. */
     startMovementCheck() {
-        setInterval(() => {
-            if (!isGameStarted || !this.world || !this.world.keyboard) return;
+        this.movementInterval = gameTimers.setInterval(() => {
+            if (!window.isGameStarted || this.world?.isStopped || !this.world?.keyboard) return;
             this.updateMovement();
         }, 1000 / 60);
     }
@@ -136,6 +132,10 @@ class Character extends MoveableObject {
     /** * Updates character movement based on keyboard input.*/
     updateMovement() {
         let moving = false;
+        if (this.isDead()) {
+            this.stopWalkingSound();
+            return;
+        }
         if (this.world.keyboard.RIGHT && this.x < this.world.level.level_end_x) {
             this.moveCharacter(true);
             moving = true;
@@ -147,6 +147,11 @@ class Character extends MoveableObject {
         if (this.world.keyboard.SPACE && !this.isAboveGround()) {
             this.jump();
             moving = true;
+        }
+        if (moving && !this.isAboveGround()) {
+            this.playWalkingSound();
+        } else {
+            this.stopWalkingSound();
         }
         if (moving) this.world.camera_x = -this.x + 100;
     }
@@ -160,13 +165,12 @@ class Character extends MoveableObject {
             this.moveLeft();
             this.otherDirection = true;
         }
-        this.playWalkingSound();
     }
 
     /*** Starts the interval for updating character animations.*/
     startAnimationUpdate() {
-        setInterval(() => {
-            if (!isGameStarted || !this.world || !this.world.keyboard) return;
+        this.animationUpdateInterval = gameTimers.setInterval(() => {
+            if (!window.isGameStarted || this.world?.isStopped || !this.world?.keyboard) return;
             this.updateAnimation();
         }, 50);
     }
@@ -177,30 +181,12 @@ class Character extends MoveableObject {
             this.playAnimation(this.IMAGES_JUMPING);
         }
     }
-    /*** clears the idle animation of the charqacrer(long idle)*/
-    resetIdleState() {
-        clearTimeout(this.idleTimer);
-        this.idleTimer = null;
-        this.currentAnimation = null;
-        if (this.isSleeping) this.stopLongIdleAnimation();
-    }
-
-    handleIdleAnimation() {
-        if (!this.idleTimer) {
-            this.idleTimer = setTimeout(() => {
-                if (!this.isCharacterMoving() && this.currentAnimation !== this.IMAGES_IDLE) {
-                    this.playAnimation(this.IMAGES_IDLE);
-                    this.currentAnimation = this.IMAGES_IDLE;
-                }
-            }, 1000);
-        }
-    }
 
     playAnimation(images) {
         if (this.currentAnimation === images) return;
         this.currentAnimation = images;
         let frameIndex = 0;
-        clearInterval(this.animationInterval);
+        if (this.animationInterval) gameTimers.clearInterval(this.animationInterval);
         let frameTime = 100;
         if (images === this.IMAGES_IDLE) frameTime = 150;
         else if (images === this.IMAGES_WALKING) frameTime = 90;
@@ -208,9 +194,9 @@ class Character extends MoveableObject {
         else if (images === this.IMAGES_LONG_IDLE) frameTime = 200;
         else if (images === this.IMAGES_HURT) frameTime = 90;
         else if (images === this.IMAGES_DEAD) frameTime = 150;
-        this.animationInterval = setInterval(() => {
-            if (this.currentAnimation !== images) {
-                clearInterval(this.animationInterval);
+        this.animationInterval = gameTimers.setInterval(() => {
+            if (this.world?.isStopped || this.currentAnimation !== images) {
+                gameTimers.clearInterval(this.animationInterval);
                 return;
             }
             this.img = this.imageCache[images[frameIndex]];
@@ -241,6 +227,7 @@ class Character extends MoveableObject {
         if (!this.isAboveGround() && this.currentAnimation === this.IMAGES_JUMPING) {
             this.img = this.imageCache[this.IMAGES_JUMPING[this.IMAGES_JUMPING.length - 1]];
             setTimeout(() => {
+                if (this.world?.isStopped) return;
                 if (!this.isCharacterMoving()) {
                     this.playAnimation(this.IMAGES_IDLE);
                 } else {
@@ -250,16 +237,16 @@ class Character extends MoveableObject {
         }
     }
 
-    /*** Handles the character's death animation and game over trigger.*/
+    /*** Handles the character's death animation.*/
     handleCharacterDeath() {
+        this.stopWalkingSound();
         this.playAnimation(this.IMAGES_DEAD);
-        setTimeout(() => this.world.gameOver(), 5000);
     }
 
     /** * Starts the interval for checking if the character is idle.*/
     startIdleCheck() {
-        setInterval(() => {
-            if (!isGameStarted || !this.world || !this.world.keyboard) return;
+        this.idleCheckInterval = gameTimers.setInterval(() => {
+            if (!window.isGameStarted || this.world?.isStopped || !this.world?.keyboard) return;
             this.checkIdleState();
         }, 250);
     }
@@ -268,19 +255,18 @@ class Character extends MoveableObject {
     checkIdleState() {
         if (this.isCharacterMoving()) {
             this.resetIdleState();
-        } else {
-            if (!this.idleTimer) {
-                this.idleTimer = setTimeout(() => {
-                    if (!this.isCharacterMoving() && this.currentAnimation !== this.IMAGES_LONG_IDLE) {
-                        this.playLongIdleAnimation();
-                    }
-                }, 5000);
-            }
+        } else if (!this.idleTimer) {
+            this.idleTimer = gameTimers.setTimeout(() => {
+                if (!this.isCharacterMoving() && this.currentAnimation !== this.IMAGES_LONG_IDLE) {
+                    this.playLongIdleAnimation();
+                }
+            }, 5000);
         }
     }
 
     /*** Determines if the character is currently moving.*/
     isCharacterMoving() {
+        if (!this.world?.keyboard) return false;
         return this.world.keyboard.RIGHT ||
             this.world.keyboard.LEFT ||
             this.isAboveGround() ||
@@ -290,18 +276,13 @@ class Character extends MoveableObject {
 
     /*** Resets the idle state of the character.*/
     resetIdleState() {
-        clearTimeout(this.idleTimer);
+        if (this.idleTimer) gameTimers.clearTimeout(this.idleTimer);
         this.idleTimer = null;
         if (this.isSleeping) this.stopLongIdleAnimation();
     }
 
     /** * Handles the idle animation when the character is not moving.*/
     handleIdleAnimation() {
-        if (!this.idleTimer) {
-            this.idleTimer = setTimeout(() => {
-                if (!this.isCharacterMoving()) this.playLongIdleAnimation();
-            }, 3000);
-        }
         if (!this.isSleeping) this.playAnimation(this.IMAGES_IDLE);
     }
 
@@ -312,17 +293,14 @@ class Character extends MoveableObject {
 
     /*** Starts the Long Idle Animation*/
     playLongIdleAnimation() {
-        if (this.isSleeping) return;
+        if (this.isSleeping || this.isDead()) return;
         this.isSleeping = true;
         this.currentAnimation = this.IMAGES_LONG_IDLE;
-        if (this.sleepSound) {
-            this.sleepSound.play().catch(() => { });
-        }
         let frameIndex = 0;
-        clearInterval(this.longIdleInterval);
-        this.longIdleInterval = setInterval(() => {
-            if (!this.isSleeping || this.currentAnimation !== this.IMAGES_LONG_IDLE) {
-                clearInterval(this.longIdleInterval);
+        if (this.longIdleInterval) gameTimers.clearInterval(this.longIdleInterval);
+        this.longIdleInterval = gameTimers.setInterval(() => {
+            if (this.world?.isStopped || !this.isSleeping || this.currentAnimation !== this.IMAGES_LONG_IDLE) {
+                gameTimers.clearInterval(this.longIdleInterval);
                 return;
             }
             this.img = this.imageCache[this.IMAGES_LONG_IDLE[frameIndex]];
@@ -333,8 +311,7 @@ class Character extends MoveableObject {
     /** * Stops the Long Idle Animation */
     stopLongIdleAnimation() {
         this.isSleeping = false;
-        this.currentAnimation = null;
-        clearInterval(this.longIdleInterval);
+        if (this.longIdleInterval) gameTimers.clearInterval(this.longIdleInterval);
         if (this.sleepSound) {
             this.sleepSound.pause();
             this.sleepSound.currentTime = 0;
@@ -348,7 +325,7 @@ class Character extends MoveableObject {
         } else {
             this.speedY = 15;
         }
-        this.smoothLanding(140, 200); // 🔥 Landet mit weichem Übergang
+        this.smoothLanding(140, 200);
     }
 
     /*** Handles smooth landing after a bounce. */
@@ -356,99 +333,75 @@ class Character extends MoveableObject {
         let startY = this.y;
         let startTime = performance.now();
         const animateLanding = () => {
+            if (this.world?.isStopped) return;
             let elapsed = performance.now() - startTime;
             let progress = Math.min(elapsed / landingDuration, 1);
             this.y = startY + (landingTarget - startY) * progress;
 
             if (progress < 1) {
-                requestAnimationFrame(animateLanding);
+                gameTimers.requestAnimationFrame(animateLanding);
             } else {
                 this.y = landingTarget;
                 this.speedY = 0;
             }
         };
 
-        requestAnimationFrame(animateLanding);
+        gameTimers.requestAnimationFrame(animateLanding);
     }
 
     /*** Handles the character taking damage. */
     hit() {
         if (this.isDead()) return;
-        const now = Date.now();
         if (this.isHurt()) return;
-        this.lastHit = now;
+        this.lastHit = Date.now();
         this.energy -= 20;
         this.playHitSoundOnce();
-        if (this.energy <= 0) {
-            this.energy = 0;
-            this.die();
-        }
-    }
-
-    /*** Handles the character's death. */
-    die() {
-        if (this.isDead) return;
-        this.isDead = true;
-        this.stopCharacterProcesses();
-        this.triggerDeathAnimation();
-    }
-
-    /*** Stops all sounds and intervals related to the character. */
-    stopCharacterProcesses() {
-        stopAllSounds();
-        stopAllIntervals();
-        if (this.animationInterval) clearInterval(this.animationInterval);
-        if (this.movementInterval) clearInterval(this.movementInterval);
-    }
-
-    /*** Triggers the character's death animation and handles game over logic... */
-    triggerDeathAnimation() {
-        this.playAnimation(this.IMAGES_DEAD);
-        if (this.dieCharacterSound) {
-            this.dieCharacterSound.pause();
-            this.dieCharacterSound.currentTime = 0;
-            this.dieCharacterSound.volume = 0.3;
-            this.dieCharacterSound.play().catch((error) => {
-                console.error("Error playing death sound:", error);
-            });
-        } else {
-            console.error("Death sound not found");
-        }
-        setTimeout(() => {
-            isGameStarted = false;
-            this.world.gameOver();
-        }, 2000);
+        if (this.energy < 0) this.energy = 0;
+        if (this.isDead()) this.stopWalkingSound();
     }
 
     /*** Checks if the character is currently hurt.*/
     isHurt() {
-        const now = Date.now();
-        return now - this.lastHit < 1000;
+        return Date.now() - this.lastHit < 1000;
     }
 
-    /*** Plays the walking sound effect if the game has started and the sound is not already playing.*/
+    /*** Plays the walking sound effect as a loop while the character is moving.*/
     playWalkingSound() {
-        if (!isGameStarted || !this.walking_sound.paused) return;
-        this.walking_sound.play().catch((error) => {
-            console.error('Error while playing the walking sound:', error);
-        });
+        if (!window.isGameStarted || this.world?.isStopped || this.isDead()) {
+            this.stopWalkingSound();
+            return;
+        }
+        this.walking_sound.loop = true;
+        if (this.walking_sound.paused) {
+            this.walking_sound.play().catch(() => {});
+        }
+    }
+
+    /*** Stops the looping walking sound.*/
+    stopWalkingSound() {
+        if (!this.walking_sound || this.walking_sound.paused) return;
+        this.walking_sound.pause();
+        this.walking_sound.currentTime = 0;
     }
 
     /*** Makes the character jump by setting its vertical speed and playing the jump sound.*/
     jump() {
         this.speedY = 25;
+        this.stopWalkingSound();
         this.playJumpSound();
     }
 
     /** makes sure, that the gamesound only starts when the game start is clicked */
     playJumpSound() {
-        if (!isGameStarted || !this.jumpSound.paused) return;
-        this.jumpSound.play().catch(() => { }); // Fehler wird ignoriert
+        if (!window.isGameStarted || this.world?.isStopped) return;
+        this.jumpSound.currentTime = 0;
+        this.jumpSound.play().catch(() => {});
     }
 
     /*** plays the hitsound of the character one time and not in a row. */
     playHitSoundOnce() {
-        if (!isGameStarted || !this.hitCharacterSound.paused) return;
-        this.hitCharacterSound.play().catch(() => { }); // Fehler wird ignoriert
+        if (!window.isGameStarted || this.world?.isStopped) return;
+        this.hitCharacterSound.currentTime = 0;
+        this.hitCharacterSound.play().catch(() => {});
     }
 }
